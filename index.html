@@ -50,6 +50,17 @@
       overflow: hidden;
       z-index: 5;
     }
+    /* Byte dancing in the top-left (tutorial completion) */
+    #byte-dance {
+      position: absolute;
+      left: 20px; top: -14px;
+      width: 235px; height: auto;
+      z-index: 6;
+      display: none;
+      transform-origin: center bottom;
+      filter: drop-shadow(0 0 18px rgba(0,220,255,.45));
+    }
+    #byte-dance.show { display: block; }   /* the GIF animates itself */
     #qrobot img {
       position: absolute;
       left: -61.46%; top: -0.09%;
@@ -116,7 +127,7 @@
     }
     #screen-question.current-on .connector:not(.cn-small) .flow {
       opacity: 1;
-      animation: currentFlow 0.5s linear 0.4s infinite both;   /* lightning bolt zips through (after the vent lights up) */
+      animation: currentFlow 1.15s linear 0.4s infinite both;   /* slower so the surge is clearly noticeable */
     }
     #screen-question.current-on .cclip img:not(.flow) { filter: brightness(1.15); }
 
@@ -192,7 +203,7 @@
       position: absolute;
       border-radius: 4px;
       background: #0ce4f9;
-      box-shadow: 0 0 8px rgba(12,228,249,.85), inset 0 0 4px rgba(255,255,255,.35);
+      box-shadow: 0 0 3px rgba(12,228,249,.4), inset 0 0 3px rgba(255,255,255,.22);
       transition: background .18s ease, box-shadow .18s ease;
     }
     #main-panel.vent-correct .vent-bar {
@@ -214,15 +225,11 @@
       background: linear-gradient(90deg, #1aa84a 0%, #5dff95 42%, #eaffef 50%, #5dff95 58%, #1aa84a 100%);
       background-size: 260% 100%;
       box-shadow: 0 0 13px rgba(60,255,140,.9), inset 0 0 4px rgba(255,255,255,.45);
-      animation: ventFlow 0.6s linear infinite;
+      animation: ventFlow 1.0s linear infinite;
     }
     #screen-question.current-on .vent-bar:nth-child(1) { animation-delay: 0s; }
     #screen-question.current-on .vent-bar:nth-child(2) { animation-delay: 0.12s; }
     #screen-question.current-on .vent-bar:nth-child(3) { animation-delay: 0.24s; }
-    .deco-line {
-      position: absolute;
-      z-index: 3; pointer-events: none;
-    }
 
     /* Switch row */
     #switch-row {
@@ -263,14 +270,22 @@
     }
 
     @keyframes correctGlow {
-      0%   { box-shadow: 0 0  0px  0px rgba(74,250,124,0); }
-      25%  { box-shadow: 0 0 22px 10px rgba(74,250,124,.95), 0 0 50px 20px rgba(74,250,124,.45); }
-      100% { box-shadow: 0 0  0px  0px rgba(74,250,124,0); }
+      0%   { box-shadow: 0 0  0px  0px rgba(255,255,255,0); }
+      25%  { box-shadow: 0 0 22px 10px rgba(255,255,255,.95), 0 0 50px 20px rgba(255,255,255,.4); }
+      100% { box-shadow: 0 0  0px  0px rgba(255,255,255,0); }
     }
 
     .sw.filled .tile  { animation: fadeIn 0.3s ease both; }
     .sw.new           { animation: correctGlow 0.95s ease-out both; }
     .sw.new    .tile  { animation: popIn  0.55s ease both; }
+
+    /* "read the pattern" highlight — each prefilled switch pops + glows as its number is read */
+    @keyframes readPop {
+      0%   { transform: scale(1);    filter: drop-shadow(0 0 0 rgba(0,229,255,0)); }
+      40%  { transform: scale(1.16); filter: drop-shadow(0 0 16px rgba(0,229,255,.95)); }
+      100% { transform: scale(1);    filter: drop-shadow(0 0 0 rgba(0,229,255,0)); }
+    }
+    .sw.read-pop { animation: readPop 0.62s ease-out; position: relative; z-index: 4; }
 
     /* Empty slots — cyan neon border (Figma #a3fffc) */
     .sw.empty {
@@ -278,12 +293,13 @@
       border: 4px solid #a3fffc;
       border-radius: 11px;
     }
+    /* active "place here" slot — white glow so it doesn't look like the cyan hint */
     .sw.empty.next-slot {
-      border: 4px solid #a3fffc;
+      border: 4px solid #ffffff;
       box-shadow:
-        0 0 4px rgba(105,244,249,0.8),
-        0 0 12px rgba(105,244,249,0.5),
-        0 0 26px rgba(105,244,249,0.28);
+        0 0 4px rgba(255,255,255,0.75),
+        0 0 12px rgba(255,255,255,0.42),
+        0 0 24px rgba(255,255,255,0.2);
     }
 
     @keyframes wrongGlowPulse {
@@ -358,7 +374,6 @@
     #screen-question.celebrating #power-btn,
     #screen-question.celebrating #bot-bar,
     #screen-question.celebrating .connector,
-    #screen-question.celebrating .deco-line,
     #screen-question.celebrating #options-box {
       opacity: 0;
       pointer-events: none;
@@ -467,14 +482,10 @@
       opacity: 0;
       pointer-events: none;
     }
-    /* option switches pop in one by one AFTER the box has deployed */
+    /* all 4 option switches pop in together AFTER the box has deployed */
     #options-area.reveal .sw {
-      animation: optTilePop 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+      animation: optTilePop 0.95s cubic-bezier(0.34,1.5,0.5,1) both;
     }
-    #options-area.reveal .sw:nth-child(1) { animation-delay: 0.05s; }
-    #options-area.reveal .sw:nth-child(2) { animation-delay: 0.22s; }
-    #options-area.reveal .sw:nth-child(3) { animation-delay: 0.39s; }
-    #options-area.reveal .sw:nth-child(4) { animation-delay: 0.56s; }
 
     /* ── Deploy: options box emerges from the main panel ── */
     /* 1. the two link pipes shoot down out of the panel bottom */
@@ -500,6 +511,17 @@
              filter: brightness(1.25) drop-shadow(0 0 18px rgba(15,229,250,.6)); }
       78%  { transform: translateY(-5px) scaleY(0.99); }
       100% { opacity: 1; transform: translateY(0) scaleY(1); filter: none; }
+    }
+    /* on completion the option placeholder retracts back up into the panel/vent */
+    #options-box.retract { animation: optionsBoxRetract 0.55s cubic-bezier(0.5, 0, 0.75, 0.4) forwards; }
+    @keyframes optionsBoxRetract {
+      0%   { opacity: 1; transform: translateY(0) scaleY(1); }
+      100% { opacity: 0; transform: translateY(-80px) scaleY(0.32); }
+    }
+    .opt-pipe.retract { animation: pipeRetract 0.5s ease forwards; }
+    @keyframes pipeRetract {
+      from { opacity: 1; transform: scaleY(1); }
+      to   { opacity: 0; transform: scaleY(0); }
     }
 
     /* Option tiles — slightly smaller than the row tiles */
@@ -842,6 +864,7 @@
 
     <!-- Robot -->
     <div id="qrobot"><img src="assets/figma/robot.webp" alt="robot" /></div>
+    <img id="byte-dance" src="assets/robot dance.gif" alt="" />
 
     <!-- Top text bar -->
     <div id="bot-bar">
@@ -886,7 +909,6 @@
     </div>
 
     <!-- Decorative glow line (options box) -->
-    <img class="deco-line" src="assets/figma/options-line.svg" alt="" style="left:746.73px;top:975.74px;width:220.609px;height:8.258px;" />
 
     <!-- Main panel -->
     <div id="main-panel">
@@ -899,7 +921,7 @@
       </div>
       <div id="switch-row"></div>
       <div id="well-done-msg" class="hidden">
-        <img id="robot-dance" src="assets/robot dance.webp" alt="robot" />
+        <img id="robot-dance" src="assets/robot dance.gif" alt="robot" />
         <span id="well-done-text">Well done!</span>
       </div>
       <div id="wrong-msg" class="hidden"></div>
@@ -1006,25 +1028,62 @@
       _setOptionsLock(false);
       return;
     }
-    const { text, audio, onDone } = _voiceQueue.shift();
+    const item = _voiceQueue.shift();
     _voicePlaying = true;
     _setOptionsLock(true);
-    _typeBotText(text);
-    audio.currentTime = 0;
     let advanced = false;
     const finish = () => {
       if (advanced) return; advanced = true;
-      if (onDone) onDone();
+      if (item.onDone) item.onDone();
       _advanceQueue();
     };
-    audio.onended = finish;
-    /* no voice file → advance once the text has finished typing + a short read hold */
-    audio.play().catch(() => setTimeout(finish, text.length * 30 + 350));
+    if (item.action) {
+      /* custom step (e.g. read the pattern aloud) — no bot text; calls finish when done */
+      item.action(finish);
+      return;
+    }
+    _typeBotText(item.text);
+    if (item.audio) {
+      item.audio.currentTime = 0;
+      item.audio.onended = finish;
+      /* no voice file → advance once the text has typed out + a short read hold */
+      item.audio.play().catch(() => setTimeout(finish, item.text.length * 30 + 450));
+    } else {
+      /* narration line with no audio → hold long enough to read */
+      setTimeout(finish, item.text.length * 30 + 700);
+    }
   }
 
   function queueBotText(text, audio, onDone) {
     _voiceQueue.push({ text, audio, onDone });
     if (!_voicePlaying) _advanceQueue();
+  }
+
+  /* queue a custom step that runs in sequence with the dialogue (options stay locked) */
+  function queueAction(action) {
+    _voiceQueue.push({ action });
+    if (!_voicePlaying) _advanceQueue();
+  }
+
+  /* Level 1: read the pattern aloud — play 3,5,3,5,3 number audio and pop/highlight
+     each prefilled switch in time (no text shown in the bot bar) */
+  function readPatternLvl1(done) {
+    const tiles = document.querySelectorAll('#switch-row .sw.filled');
+    const values = [3, 5, 3, 5, 3];
+    let i = 0;
+    function playNext() {
+      if (i >= values.length) { setTimeout(done, 350); return; }
+      const v = values[i];
+      const snd = v === 3 ? sfxSwitch3 : sfxSwitch5;
+      const t = tiles[i];
+      if (t) { t.classList.remove('read-pop'); void t.offsetWidth; t.classList.add('read-pop'); }
+      i++;
+      /* when this number's audio ends, play the next one (small breath between) */
+      snd.onended = () => { snd.onended = null; setTimeout(playNext, 160); };
+      snd.currentTime = 0;
+      snd.play().catch(() => { snd.onended = null; setTimeout(playNext, 700); });  /* fallback if audio can't play */
+    }
+    playNext();
   }
 
   function clearVoiceQueue() {
@@ -1461,6 +1520,7 @@
   let wrongCount  = 0;
   let wrongAnswer = null;
   let showHint    = false;
+  let lvl1Guide   = false;   /* Level 1: highlight the correct option once the tap prompt appears */
   let justPlaced  = false;
   let firstRender = false;
   let score       = 0;
@@ -1651,7 +1711,7 @@
           const tile = el.querySelector('.tile');
           if (tile && firstRender) { tile.style.animation = 'switchDrop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both'; tile.style.animationDelay = delay; }
           swRow.appendChild(el);
-          if (firstRender) setTimeout(() => { sfxSwitchAppear(i); playSwitchAppear(i); }, delayMs);
+          if (firstRender) setTimeout(() => sfxSwitchAppear(i), delayMs);   /* old switch-appear clack (no number audio) */
         } else {
           /* user-fill position */
           const userIdx   = userPositions.indexOf(i);
@@ -1688,7 +1748,7 @@
         if (tile && firstRender) { tile.style.animation = 'switchDrop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both'; tile.style.animationDelay = delay; }
         if (isNew) el.style.animationDelay = delay;
         swRow.appendChild(el);
-        if (firstRender) setTimeout(() => { sfxSwitchAppear(i); playSwitchAppear(i); }, delayMs);
+        if (firstRender) setTimeout(() => sfxSwitchAppear(i), delayMs);   /* old switch-appear clack (no number audio) */
       } else {
         const div = document.createElement('div');
         div.className = 'sw empty' + (i === row.length ? ' next-slot' : '');
@@ -1705,7 +1765,7 @@
     cfg.options.forEach(opt => {
       const isCorrect      = opt === correct;
       const isWrongOption  = phase === 'wrong-second' && opt === wrongAnswer;
-      const isLvl1Glow     = currentRow === 0 && opt === 5 && grid[0].length === PREFILLED;
+      const isLvl1Glow     = currentRow === 0 && lvl1Guide && isCorrect;
       const cls            = isWrongOption ? 'wrong-option'
                            : (showHint && isCorrect) || isLvl1Glow ? 'hint'
                            : 'option';
@@ -1736,8 +1796,7 @@
   function handleStart() {
     /* unlock the Web Audio context on this user gesture so timed SFX can play later */
     try { const c = ac(); if (c.state === 'suspended') c.resume(); } catch (e) {}
-    buildLevelScreen(ROWS_CONFIG[currentRow]);
-    showScreen('level');
+    handleLevelStart();   /* no level intro screen — straight into the tutorial */
   }
 
   function handleLevelStart() {
@@ -1755,6 +1814,12 @@
     setTimeout(() => sfxPop(620), 150);   /* robot       */
     setTimeout(() => sfxPop(660), 2950);  /* blue pipe   */
     setTimeout(() => sfxPop(780), 2990);  /* red power   */
+
+    lvl1Guide = false;   /* no option highlight until the tap prompt appears */
+
+    /* reset the top-left character (Byte dance only shows on tutorial completion) */
+    document.getElementById('byte-dance').classList.remove('show');
+    document.getElementById('qrobot').style.opacity = '';
 
     /* the bot bar stays hidden until everything else has appeared */
     const botBar = document.getElementById('bot-bar');
@@ -1775,9 +1840,9 @@
     const optArea = document.getElementById('options-area');
     const optBox  = document.getElementById('options-box');
     const pipes   = document.querySelectorAll('.opt-pipe');
-    optBox.classList.remove('deploy');  optBox.classList.add('hidden-initially');
+    optBox.classList.remove('deploy', 'retract');  optBox.classList.add('hidden-initially');
     optArea.classList.remove('reveal'); optArea.classList.add('hidden-initially');
-    pipes.forEach(p => { p.classList.remove('extend'); p.classList.add('hidden-initially'); });
+    pipes.forEach(p => { p.classList.remove('extend', 'retract'); p.classList.add('hidden-initially'); });
 
     const unlockDelay = SWITCH_OFFSET_MS + (TOTAL - 1) * SWITCH_STEP_MS + 700;
     setTimeout(() => {
@@ -1799,19 +1864,77 @@
         optArea.classList.remove('hidden-initially');
         void optArea.offsetWidth;
         optArea.classList.add('reveal');
-        [90, 260, 430, 600].forEach((ms, i) => setTimeout(() => sfxPop(640 + i * 70), ms));
+        sfxPop(700);   /* single pop — all four options appear together */
         setTimeout(() => optArea.classList.remove('reveal'), 1400);
 
-        /* 4 — finally the text box slides in, THEN the bot types its instruction */
+        /* 4 — finally the text box slides in, THEN the bot speaks */
         setTimeout(() => {
           botBar.classList.remove('bar-hidden');
           void botBar.offsetWidth;
           botBar.classList.add('bar-reveal');
           sfxBarOpen();
-          setTimeout(() => queueBotText('Tap the correct switch.', voiceTapCorrect), 450);
+          setTimeout(() => {
+            if (currentRow === 0) {
+              /* Level 1 — guided tutorial narration */
+              queueBotText('Let us start fixing the switches.');
+              queueBotText('These switches are in a pattern.');
+              queueBotText('Let us read the pattern together.');
+              queueAction(readPatternLvl1);   /* plays 3,5,3,5,3 audio + highlights switches (no text) */
+              queueAction((d) => { lvl1Guide = true; renderQuestion(); d(); });   /* highlight the correct option as the prompt appears */
+              queueBotText('Tap the correct switch to continue the pattern.');
+            } else {
+              queueBotText('Tap the correct switch.', voiceTapCorrect);
+            }
+          }, 450);
         }, 750);
       }, 560 + 1400);   /* after the box-deploy animation (1.4s) finishes */
     }, unlockDelay);
+  }
+
+  /* Levels after the tutorial: the chrome stays on screen — only the new switches
+     refresh and the option placeholder animates back in (no level screen, no re-entrance). */
+  function loadLevelInPlace() {
+    if (timer) clearTimeout(timer);
+    phase = 'question';
+    lvl1Guide = false;
+
+    /* clear the previous level's completion state — everything else stays put */
+    const sq = document.getElementById('screen-question');
+    sq.classList.remove('current-on', 'celebrating', 'intro');
+    const panel = document.getElementById('main-panel');
+    panel.classList.remove('row-complete', 'well-done-active', 'opening');
+    document.getElementById('panel-frame').src = 'assets/figma/panel.svg';
+    document.getElementById('well-done-msg').classList.add('hidden');
+    document.getElementById('byte-dance').classList.remove('show');
+    document.getElementById('qrobot').style.opacity = '';
+    const botBar = document.getElementById('bot-bar');
+    botBar.classList.remove('bar-hidden');     /* the text bar stays */
+    botBar.style.visibility = 'visible';
+
+    /* the new level's switches just appear (chrome already in place — no cascade) */
+    firstRender = false; renderQuestion();
+
+    /* hide the option box + pipes, then deploy ONLY them with animation */
+    const optArea = document.getElementById('options-area');
+    const optBox  = document.getElementById('options-box');
+    const pipes   = document.querySelectorAll('.opt-pipe');
+    optBox.classList.remove('deploy', 'retract'); optBox.classList.add('hidden-initially');
+    optArea.classList.remove('reveal'); optArea.classList.add('hidden-initially');
+    pipes.forEach(p => { p.classList.remove('extend', 'retract'); p.classList.add('hidden-initially'); });
+
+    setTimeout(() => {
+      pipes.forEach(p => { p.classList.remove('hidden-initially'); void p.offsetWidth; p.classList.add('extend'); });
+      setTimeout(() => {
+        sfxDeploy();
+        optBox.classList.remove('hidden-initially'); void optBox.offsetWidth; optBox.classList.add('deploy');
+      }, 560);
+      setTimeout(() => {
+        optArea.classList.remove('hidden-initially'); void optArea.offsetWidth; optArea.classList.add('reveal');
+        sfxPop(700);
+        setTimeout(() => optArea.classList.remove('reveal'), 1400);
+        setTimeout(() => queueBotText('Tap the correct switch.'), 250);
+      }, 560 + 1400);
+    }, 1150);   /* wait for the blast doors to open before deploying the options */
   }
 
   function handleAnswer(val) {
@@ -1841,37 +1964,46 @@
         sfxCorrect();
         phase = 'question';
         justPlaced = true; renderQuestion(); justPlaced = false;
+        sfxRowComplete();
         setTimeout(sfxCurrentFlow, 230);   /* electric surge as the current flows (after the correct chime) */
-        timer = setTimeout(() => {
-          sfxRowComplete();
-          sfxBarClose();              /* bot bar closes as the row completes */
-          phase = 'row-complete';
-          renderQuestion();           /* shows pattern, well-done still hidden */
-          setTimeout(() => {
-            document.getElementById('main-panel').classList.add('well-done-active');
-            const wd = document.getElementById('well-done-msg');
-            wd.classList.remove('hidden');
-            wd.style.animation = 'none';
-            wd.offsetHeight;
-            wd.style.animation = '';
-          }, 2600);
+
+        /* the option placeholder retracts back up into the panel */
+        const _ob = document.getElementById('options-box');
+        _ob.classList.remove('deploy'); void _ob.offsetWidth; _ob.classList.add('retract');
+        document.querySelectorAll('.opt-pipe').forEach(p => { p.classList.remove('extend'); p.classList.add('retract'); });
+
+        /* Byte dances in the top-left to celebrate */
+        document.getElementById('qrobot').style.opacity = '0';
+        document.getElementById('byte-dance').classList.add('show');
+
+        const isLast = currentRow + 1 >= ROWS_CONFIG.length;
+        const advance = () => {
           timer = setTimeout(() => {
-            playTransition(() => {
-              if (currentRow + 1 >= ROWS_CONFIG.length) {
-                showEndScreen();
-                showScreen('complete');
-              } else {
-                currentRow++;
-                buildLevelScreen(ROWS_CONFIG[currentRow]);
-                showScreen('level');
-              }
-            });
-          }, 5200);
-        }, 2400);
+            if (isLast) {
+              playTransition(() => { showEndScreen(); showScreen('complete'); });
+            } else {
+              /* blast-door transition, then the next level loads in place (only options animate) */
+              playTransition(() => { currentRow++; loadLevelInPlace(); });
+            }
+          }, 700);
+        };
+
+        if (currentRow === 0) {
+          queueBotText('Well done! The switches are fixed.');
+          queueBotText('Now, it is your turn to help!', null, advance);
+        } else {
+          const winLines = [
+            'Good job! You fixed these switches.',
+            'Wuhoo! The switches are fixed.',
+            'Well done! All the switches are fixed.'
+          ];
+          queueBotText(winLines[Math.floor(Math.random() * winLines.length)], null, advance);
+        }
       } else {
         sfxCorrect();
         phase = 'question';
         justPlaced = true; renderQuestion(); justPlaced = false;
+        if (currentRow === 0) queueBotText('Tap the correct switch.');   /* guided prompt for the next tap */
       }
     } else {
       sfxWrong();
@@ -1935,7 +2067,7 @@
     document.getElementById('transition').classList.remove('closed');
     phase = 'intro'; currentRow = 0;
     wrongCount = 0; wrongAnswer = null;
-    showHint = false; score = 0; streak = 0;
+    showHint = false; lvl1Guide = false; score = 0; streak = 0;
     initGrid();
     showScreen('intro');
   }
@@ -1945,7 +2077,7 @@
   const PRELOAD_ASSETS = [
     'assets/title screen.webp',
     'assets/start.webp',
-    'assets/robot dance.webp',
+    'assets/robot dance.gif',
     'assets/Red button.webp',
     'assets/Green button.webp',
     'assets/figma/bg.webp',
@@ -1954,7 +2086,6 @@
     'assets/figma/panel.svg',
     'assets/figma/panel-green.svg',
     'assets/figma/options-box.svg',
-    'assets/figma/options-line.svg',
     'assets/figma/connector.webp',
     'assets/figma/tile.webp',
   ];

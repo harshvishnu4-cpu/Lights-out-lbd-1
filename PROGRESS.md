@@ -103,7 +103,8 @@ vector frames stay **SVG**. Unused legacy assets have been removed.
   `panel.svg`, `panel-green.svg` (success), `options-box.svg`, `options-line.svg`,
   `textbox.svg`.
 - `assets/` — `Red button.webp`, `Green button.webp`, `robot dance.webp`,
-  `start.webp`, `title screen.webp`.
+  `title screen.webp` (3D title art). The **Start** / **Play Again** buttons are
+  now built in CSS (themed chamfered cyan plate), so no button image is needed.
 - `audio/` — number/voice `.ogg` clips are referenced by name but **not currently
   present**; the game runs fine without them (synth SFX cover everything).
 

@@ -293,13 +293,16 @@
       border: 4px solid #a3fffc;
       border-radius: 11px;
     }
-    /* active "place here" slot — white glow so it doesn't look like the cyan hint */
+    /* active "place here" slot — cyan glow per the Figma design (#69f4f9 layered) */
     .sw.empty.next-slot {
-      border: 4px solid #ffffff;
+      border: 4px solid #a3fffc;
       box-shadow:
-        0 0 4px rgba(255,255,255,0.75),
-        0 0 12px rgba(255,255,255,0.42),
-        0 0 24px rgba(255,255,255,0.2);
+        0 0 3px #69f4f9,
+        0 0 6px #69f4f9,
+        0 0 21px #69f4f9,
+        0 0 42px rgba(105,244,249,0.85),
+        0 0 72px rgba(105,244,249,0.6),
+        0 0 125px rgba(105,244,249,0.45);
     }
 
     @keyframes wrongGlowPulse {
@@ -622,7 +625,7 @@
       object-fit: cover;
     }
 
-    #screen-intro .btn-start-img {
+    #screen-intro .btn-start {
       position: relative;
       z-index: 1;
     }
@@ -638,13 +641,75 @@
 
     .level-float { animation: float 2s ease-in-out infinite; }
 
-    .btn-start-img {
-      background: none; border: none; padding: 0; cursor: pointer;
-      transition: transform 0.15s, filter 0.15s;
+    /* ── Themed sci-fi START button (built in CSS, crisp at any scale) ── */
+    .btn-start {
+      position: relative;
+      width: 300px; height: 92px;
+      border: none; padding: 0; margin: 0; cursor: pointer;
+      background: transparent;
+      font-family: 'Exo 2', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      filter: drop-shadow(0 6px 14px rgba(0,12,28,.55));
+      transition: transform 0.16s ease;
+      animation: startFloat 3s ease-in-out infinite;
     }
-    .btn-start-img img { width: 280px; display: block; }
-    .btn-start-img:hover { transform: scale(1.06); filter: brightness(1.12) drop-shadow(0 0 14px rgba(0,220,200,.55)); }
-    .btn-start-img:active { transform: scale(0.97); }
+    /* chamfered shape shared by every layer */
+    .btn-start::before,
+    .btn-start::after,
+    .btn-start .shine {
+      clip-path: polygon(20px 0, calc(100% - 20px) 0, 100% 50%, calc(100% - 20px) 100%,
+                         20px 100%, 0 50%);
+    }
+    /* outer bright-cyan rim */
+    .btn-start::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(180deg, #d4fbff 0%, #21e6fa 32%, #0aa6cf 62%, #0b4c78 100%);
+      box-shadow: 0 0 26px rgba(12,228,249,.55);
+      animation: startGlow 2.4s ease-in-out infinite;
+    }
+    /* inner glassy blue fill, inset to leave the rim showing */
+    .btn-start::after {
+      content: ''; position: absolute; inset: 4px;
+      background:
+        linear-gradient(180deg, rgba(190,250,255,.55) 0%, rgba(57,110,150,.6) 16%,
+                        #1d4a72 46%, #0c2a48 100%);
+    }
+    /* moving sheen */
+    .btn-start .shine {
+      position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,.55) 50%, transparent 62%);
+      background-size: 250% 100%; background-position: 160% 0;
+      animation: startShine 3.4s ease-in-out infinite;
+    }
+    .btn-start .lbl {
+      position: absolute; inset: 0; z-index: 2;
+      display: flex; align-items: center; justify-content: center; gap: 14px;
+      font-size: 38px; font-weight: 800; letter-spacing: 5px;
+      text-transform: uppercase; color: #ffffff;
+      text-shadow: 0 0 12px rgba(12,228,249,.9), 0 2px 3px rgba(0,24,44,.7);
+      padding-left: 4px;   /* optical centering with the letter-spacing */
+    }
+    .btn-start .lbl::before {
+      content: '▶'; font-size: 22px; line-height: 1;
+      color: #eafdff; text-shadow: 0 0 14px rgba(12,228,249,1);
+      transform: translateY(1px);
+    }
+    .btn-start:hover { transform: scale(1.05); }
+    .btn-start:hover::before { filter: brightness(1.12); box-shadow: 0 0 38px rgba(12,228,249,.85); }
+    .btn-start:active { transform: scale(0.97); }
+
+    @keyframes startGlow {
+      0%, 100% { box-shadow: 0 0 18px rgba(12,228,249,.45); }
+      50%      { box-shadow: 0 0 34px rgba(12,228,249,.8); }
+    }
+    @keyframes startFloat {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-6px); }
+    }
+    @keyframes startShine {
+      0%       { background-position: 160% 0; }
+      55%, 100%{ background-position: -60% 0; }
+    }
 
     .hidden { display: none !important; }
 
@@ -841,19 +906,18 @@
     }
     .end-row .tile-num { font-size: 58px; }
 
+    /* Play Again reuses the themed .btn-start look (see below), re-sized + repositioned */
     #end-play-again {
       position: absolute;
-      bottom: 70px; left: 50%; transform: translateX(-50%);
-      padding: 16px 64px; font-size: 24px; font-weight: 800;
-      font-family: 'Exo 2', sans-serif;
-      background: linear-gradient(135deg, #00b8c4 0%, #00d4a8 100%);
-      color: #fff; border: none; border-radius: 14px;
-      cursor: pointer; letter-spacing: 1px;
-      box-shadow: 0 4px 22px rgba(0,200,180,.42), inset 0 1px 0 rgba(255,255,255,.2);
-      transition: box-shadow 0.18s;
-      animation: fadeIn 0.5s ease both;
+      bottom: 64px; left: 50%;
+      width: 360px; height: 86px;
+      transform: translateX(-50%);
+      animation: fadeIn 0.5s ease both;   /* no float here; the rim keeps its glow pulse */
     }
-    #end-play-again:hover { box-shadow: 0 6px 30px rgba(0,200,180,.6); }
+    #end-play-again .lbl { font-size: 30px; letter-spacing: 3px; padding-left: 0; }
+    #end-play-again .lbl::before { content: '\21BB'; font-size: 28px; transform: translateY(0); }
+    #end-play-again:hover { transform: translateX(-50%) scale(1.04); }
+    #end-play-again:active { transform: translateX(-50%) scale(0.97); }
   </style>
 </head>
 <body>
@@ -863,8 +927,9 @@
   <!-- ── INTRO ─────────────────────────────────── -->
   <div id="screen-intro">
     <img id="title-screen-img" src="assets/title screen.webp" alt="Lights Out" />
-    <button class="btn-start-img" onclick="handleStart()">
-      <img src="assets/start.webp" alt="Start" />
+    <button class="btn-start" onclick="handleStart()" aria-label="Start">
+      <span class="shine"></span>
+      <span class="lbl">Start</span>
     </button>
   </div>
 
@@ -957,7 +1022,10 @@
   <!-- ── COMPLETE ──────────────────────────────── -->
   <div id="screen-complete" class="hidden">
     <video id="end-video" src="assets/end-video.mp4" playsinline preload="auto"></video>
-    <button id="end-play-again" class="hidden" onclick="resetGame()">Play Again ↻</button>
+    <button id="end-play-again" class="btn-start hidden" onclick="resetGame()" aria-label="Play Again">
+      <span class="shine"></span>
+      <span class="lbl">Play Again</span>
+    </button>
   </div>
 
   <!-- ── Confetti burst (energy shards / sparks on pattern complete) ── -->
@@ -1815,7 +1883,8 @@
   function handleStart() {
     /* unlock the Web Audio context on this user gesture so timed SFX can play later */
     try { const c = ac(); if (c.state === 'suspended') c.resume(); } catch (e) {}
-    handleLevelStart();   /* no level intro screen — straight into the tutorial */
+    /* blast doors close over the title, then the gameplay entrance begins behind them */
+    playTransition(() => { handleLevelStart(); });
   }
 
   function handleLevelStart() {
@@ -2221,7 +2290,6 @@
   /* ── Boot: preload every asset behind the loading screen, then start ── */
   const PRELOAD_ASSETS = [
     'assets/title screen.webp',
-    'assets/start.webp',
     'assets/robot dance.gif',
     'assets/Red button.webp',
     'assets/Green button.webp',

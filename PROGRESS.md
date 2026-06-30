@@ -98,7 +98,8 @@ referenced and degrade gracefully if missing.
 ## Assets
 All raster art is **WebP** (converted from PNG/JPG — ~9.9 MB → ~0.35 MB total);
 vector frames stay **SVG**. Unused legacy assets have been removed.
-- `assets/figma/` — `bg.webp`, `robot.webp`, `connector.webp` (pipes), `tile.webp`,
+- `assets/` — `background.webp` (sci-fi panel-wall game background, 1920×1080).
+- `assets/figma/` — `robot.webp`, `connector.webp` (pipes), `tile.webp`,
   `panel.svg`, `panel-green.svg` (success), `options-box.svg`, `options-line.svg`,
   `textbox.svg`.
 - `assets/` — `Red button.webp`, `Green button.webp`, `robot dance.webp`,

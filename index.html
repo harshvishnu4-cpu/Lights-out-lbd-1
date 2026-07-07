@@ -1924,10 +1924,13 @@
     document.getElementById('byte-dance').classList.remove('show');
     document.getElementById('qrobot').style.opacity = '';
 
-    /* the bot bar stays hidden until everything else has appeared */
+    /* the bot bar stays hidden until everything else has appeared;
+       clear its default text so no stale line flashes when it slides in */
     const botBar = document.getElementById('bot-bar');
     botBar.classList.remove('bar-reveal');
     botBar.classList.add('bar-hidden');
+    clearVoiceQueue();
+    document.getElementById('bot-text').textContent = '';
 
     firstRender = true; renderQuestion(); firstRender = false;
 

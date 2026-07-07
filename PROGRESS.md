@@ -51,8 +51,10 @@ Open `index.html` in any modern browser. (For audio to start, the player taps
 - `TOTAL = 8` slots; `PREFILLED = 5` shown at start (levels 1–3). Player taps the
   correct option to fill the remaining slots in order.
 - **Scoring:** 15 (first try) / 10 (after a wrong try) / 5 (after a hint).
-- **Wrong answer:** shake + red glow pulse + spark burst on the wrong switch; the
-  vent bars flash red. After **2** wrongs, the correct option glows as a hint.
+- **Wrong answer:** feedback shows **only on the tapped option** (gentle shake +
+  **amber** glow pulse + gold spark burst) — nothing on the switch row / vent
+  circuit, and **no spoken instruction** repeats. Recovers quickly so the player
+  can retry without waiting. After **2** wrongs, the correct option glows as a hint.
 - **Correct, completed pattern:** success state (see below) → "Well done!" →
   blast-door transition to the next level (or the completion screen after level 4).
 
@@ -70,8 +72,8 @@ panel → option tiles pop in. Each beat has its own sound.
 ### Switches & vent
 - Tiles render as a metal rocker (cropped from `tile.png`) + a **Lilita One** number.
 - Empty slots: cyan neon border; the active "next" slot has a soft cyan glow.
-- **Vent bars** (top of panel) recolor by state: cyan (idle), green (correct),
-  red (wrong).
+- **Vent bars** (top of panel) recolor by state: cyan (idle), green (correct).
+  Wrong answers are shown on the tapped option only, not the vent/main panel.
 
 ### Power button & current (success feedback)
 - Power button: **red** (off) → **green** (on) + pulse when the pattern is complete.
@@ -87,11 +89,20 @@ panel → option tiles pop in. Each beat has its own sound.
 - Bot lines **typewriter** out with soft talk blips; options lock while the bot
   "speaks". Instruction is spoken right when the switches finish appearing.
 
+### Tutorial nudge (Level 1 only)
+- A **tapping-hand cue** (`nudge.webp`) points at the correct option whenever it's
+  the player's turn to tap, and bobs like a tap. It hides the instant the player
+  taps (and while the bot is speaking), repositions to each new correct option, and
+  never appears after the tutorial (levels 2+).
+
 ### Audio (all synthesized via Web Audio API; master gain + compressor)
-hover, click, correct, wrong, row-complete, entrance pops, panel power-on, options
-deploy whoosh, power-down/up (transition), bot-bar open/close, switch-appear,
-talk blips, and the **current-flow surge**. Optional number-voice `.ogg` files are
-referenced and degrade gracefully if missing.
+- **Background music:** a gentle synthesized sci-fi ambient loop (soft pad chord
+  progression + sparkle arpeggio) on its own low gain, so it never overpowers the
+  SFX. Starts on the first Play tap, ducks under the end video, restores on reset.
+- **SFX:** hover, click, correct, **wrong (gentle "oops", not alarming)**,
+  row-complete, entrance pops, panel power-on, options deploy whoosh, power-down/up
+  (transition), bot-bar open/close, switch-appear, talk blips, and the
+  **current-flow surge**. Optional number-voice `.ogg` files degrade gracefully if missing.
 
 ---
 
@@ -104,8 +115,8 @@ vector frames stay **SVG**. Unused legacy assets have been removed.
   `textbox.svg`.
 - `assets/` — `Red button.webp`, `Green button.webp`, `robot dance.webp`,
   `title screen.webp` (3D title art), `play button.svg` (title-screen **PLAY**
-  button). The end-screen **Play Again** button is built in CSS (themed chamfered
-  cyan plate to match).
+  button), `nudge.webp` (tutorial tapping-hand cue). The end-screen **Play Again**
+  button is built in CSS (themed chamfered cyan plate to match).
 - `audio/` — number/voice `.ogg` clips are referenced by name but **not currently
   present**; the game runs fine without them (synth SFX cover everything).
 

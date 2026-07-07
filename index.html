@@ -211,8 +211,8 @@
       box-shadow: 0 0 13px rgba(43,255,122,.95), inset 0 0 4px rgba(255,255,255,.4);
     }
     #main-panel.vent-wrong .vent-bar {
-      background: #ff3b3b;
-      box-shadow: 0 0 13px rgba(255,59,59,.95), inset 0 0 4px rgba(255,255,255,.4);
+      background: #ffb020;
+      box-shadow: 0 0 13px rgba(255,176,32,.95), inset 0 0 4px rgba(255,255,255,.4);
     }
     #main-panel.row-complete .vent-bar { display: none; }
 
@@ -306,20 +306,20 @@
     }
 
     @keyframes wrongGlowPulse {
-      0%   { box-shadow: 0 0 0 0 rgba(255,40,40,0);          outline-color: rgba(255,70,70,.35); }
-      16%  { box-shadow: 0 0 34px 12px rgba(255,45,45,.98), 0 0 68px 26px rgba(255,0,0,.55); outline-color: #ff5050; }
-      100% { box-shadow: 0 0 18px 4px rgba(255,45,45,.7);   outline-color: #ff3333; }
+      0%   { box-shadow: 0 0 0 0 rgba(255,176,32,0);           outline-color: rgba(255,200,96,.35); }
+      16%  { box-shadow: 0 0 34px 12px rgba(255,176,32,.95), 0 0 68px 26px rgba(255,150,20,.5); outline-color: #ffc23c; }
+      100% { box-shadow: 0 0 18px 4px rgba(255,176,32,.7);    outline-color: #ffb020; }
     }
     .sw.wrong { animation: shake 0.45s ease; }
     .sw.wrong-option { animation: shake 0.45s ease; }
     .sw.wrong .tile,
     .sw.wrong-option .tile {
-      outline: 3px solid #ff3333;
+      outline: 3px solid #ffb020;
       border-radius: 8px;
       animation: wrongGlowPulse 0.8s ease-out both;
     }
 
-    /* sparks flung from a wrong switch */
+    /* sparks flung from a wrong switch (warm amber/gold — no red) */
     .spark {
       position: absolute;
       left: 50%; top: 45%;
@@ -327,7 +327,7 @@
       border-radius: 50%;
       pointer-events: none;
       z-index: 40;
-      box-shadow: 0 0 10px 3px rgba(255,150,40,.95);
+      box-shadow: 0 0 10px 3px rgba(255,190,70,.95);
     }
     .spark-burst {
       position: absolute;
@@ -336,7 +336,7 @@
       border-radius: 50%;
       pointer-events: none;
       z-index: 39;
-      background: radial-gradient(circle, rgba(255,210,90,.95) 0%, rgba(255,120,30,.55) 38%, rgba(255,60,30,0) 70%);
+      background: radial-gradient(circle, rgba(255,228,150,.95) 0%, rgba(255,184,70,.5) 40%, rgba(255,184,70,0) 70%);
     }
 
     /* All switches shake together on wrong answer */
@@ -795,6 +795,25 @@
       text-shadow: 0 0 16px rgba(0,229,255,.55);
     }
 
+    /* ── Tutorial nudge (tapping hand pointing at the target) ── */
+    #nudge {
+      position: absolute;
+      width: 76px; height: auto;
+      z-index: 8;                 /* above gameplay, below the blast doors */
+      pointer-events: none;
+      display: none;
+      filter: drop-shadow(0 5px 9px rgba(0,0,0,0.5));
+      transform-origin: top center;
+    }
+    #nudge.show { display: block; animation: nudgeTap 1.15s ease-in-out infinite; }
+    @keyframes nudgeTap {
+      0%   { transform: translateY(12px) scale(1); }
+      28%  { transform: translateY(-6px) scale(1.03); }   /* lift toward the tile */
+      44%  { transform: translateY(1px)  scale(0.95); }    /* tap down */
+      60%  { transform: translateY(-2px) scale(1); }
+      100% { transform: translateY(12px) scale(1); }
+    }
+
     /* ════════════════════════════════════════════
        CONFETTI — themed energy burst on pattern complete
     ════════════════════════════════════════════ */
@@ -1041,6 +1060,9 @@
     </button>
   </div>
 
+  <!-- ── Tutorial nudge: a tapping hand that points at where to tap ── -->
+  <img id="nudge" src="assets/nudge.webp" alt="" />
+
   <!-- ── Confetti burst (energy shards / sparks on pattern complete) ── -->
   <canvas id="fx-confetti"></canvas>
 
@@ -1105,6 +1127,36 @@
   function _setOptionsLock(locked) {
     const el = document.getElementById('options-area');
     if (el) el.style.pointerEvents = locked ? 'none' : '';
+    /* the tutorial nudge only shows while the player can actually tap */
+    if (locked) hideNudge(); else maybeShowNudge();
+  }
+
+  /* ── Tutorial nudge: a tapping hand pointing at the correct option ── */
+  function hideNudge() {
+    const n = document.getElementById('nudge');
+    if (n) n.classList.remove('show');
+  }
+  function maybeShowNudge() {
+    const n = document.getElementById('nudge');
+    if (!n) return;
+    /* tutorial only (level 1), while it's the player's turn to tap */
+    if (currentRow !== 0 || (phase !== 'question' && phase !== 'hint')) { hideNudge(); return; }
+    const cfg = ROWS_CONFIG[currentRow];
+    const up  = getUserPositions(cfg);
+    const rowFull = grid[currentRow].length >= (up ? up.length : TOTAL);
+    const target = document.querySelector('#options-area .sw.hint');   /* the glowing correct option */
+    if (rowFull || !target) { hideNudge(); return; }
+    const canvas = document.getElementById('canvas');
+    const cr = canvas.getBoundingClientRect();
+    const scale = (cr.width / 1920) || 1;
+    const tr = target.getBoundingClientRect();
+    const fx = (tr.left + tr.width / 2 - cr.left) / scale;   /* target centre-x (canvas coords) */
+    const fy = (tr.top + tr.height - cr.top) / scale;         /* target bottom-y */
+    const NW = 76, NH = NW * 101 / 56;                        /* nudge display size */
+    n.style.width = NW + 'px';
+    n.style.left = (fx - NW * 0.36) + 'px';                   /* align fingertip (~36% across) */
+    n.style.top  = (fy - NH * 0.03 - 16) + 'px';             /* fingertip just inside the tile bottom */
+    n.classList.add('show');
   }
 
   /* typewriter the dialogue out, blipping softly as the character "speaks" */
@@ -1221,6 +1273,72 @@
     return _master;
   }
 
+  /* ── Background music: a gentle synthesized sci-fi ambient loop ──
+     Routed on its own low gain (bypasses the SFX master boost) so it stays
+     balanced and never overpowers the interaction sounds. */
+  const BGM_VOL = 0.6;
+  let _bgmOn = false, _bgmGain = null, _bgmTimer = null, _bgmStep = 0;
+  /* calm chord progression (Hz): Am → F → C → G, low + airy */
+  const BGM_CHORDS = [
+    [220.00, 261.63, 329.63],   /* Am */
+    [174.61, 220.00, 261.63],   /* F  */
+    [196.00, 246.94, 329.63],   /* C/G-ish */
+    [196.00, 293.66, 392.00],   /* G  */
+  ];
+  function _bgmBar() {
+    if (!_bgmOn) return;
+    const ctx = ac();
+    const chord = BGM_CHORDS[_bgmStep % BGM_CHORDS.length];
+    const t0 = ctx.currentTime + 0.04;
+    const BAR = 3.6;
+    /* soft pad — each chord note swells in and out over the bar */
+    chord.forEach((f, idx) => {
+      const o = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+      o.type = idx === 0 ? 'sine' : 'triangle';
+      o.frequency.value = f;
+      o.detune.value = (idx - 1) * 4;
+      lp.type = 'lowpass'; lp.frequency.value = 1100;
+      o.connect(lp); lp.connect(g); g.connect(_bgmGain);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(0.14, t0 + 1.3);
+      g.gain.linearRampToValueAtTime(0.0001, t0 + BAR);
+      o.start(t0); o.stop(t0 + BAR + 0.1);
+    });
+    /* gentle sparkle arpeggio (an octave up), very soft */
+    const steps = 6;
+    for (let s = 0; s < steps; s++) {
+      const f = chord[s % chord.length] * 2;
+      const at = t0 + s * (BAR / steps);
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      o.connect(g); g.connect(_bgmGain);
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.linearRampToValueAtTime(0.05, at + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.5);
+      o.start(at); o.stop(at + 0.55);
+    }
+    _bgmStep++;
+    _bgmTimer = setTimeout(_bgmBar, BAR * 1000);
+  }
+  function startBgm() {
+    if (_bgmOn) return;
+    const ctx = ac();
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    _bgmOn = true;
+    _bgmGain = ctx.createGain();
+    _bgmGain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    _bgmGain.gain.linearRampToValueAtTime(BGM_VOL, ctx.currentTime + 3);   /* fade in */
+    _bgmGain.connect(ctx.destination);
+    _bgmStep = 0;
+    _bgmBar();
+  }
+  function duckBgm(on) {   /* lower the music under the end-video, restore on reset */
+    if (!_bgmGain) return;
+    const ctx = ac();
+    _bgmGain.gain.cancelScheduledValues(ctx.currentTime);
+    _bgmGain.gain.linearRampToValueAtTime(on ? 0.06 : BGM_VOL, ctx.currentTime + 0.6);
+  }
+
   function sfxHover() {
     const ctx = ac(), o = ctx.createOscillator(), g = ctx.createGain();
     o.connect(g); g.connect(masterGain());
@@ -1255,15 +1373,17 @@
 
   function sfxWrong() {
     const ctx = ac();
-    [0, 0.13, 0.26].forEach((t, i) => {
+    /* gentle two-note "oops" — soft triangle tones, not an alarming buzzer */
+    [[392, 0], [311.13, 0.16]].forEach(([f, t]) => {
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.connect(g); g.connect(masterGain());
-      o.type = 'sawtooth';
-      o.frequency.setValueAtTime(180 - i * 30, ctx.currentTime + t);
-      o.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + t + 0.12);
-      g.gain.setValueAtTime(0.18, ctx.currentTime + t);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.14);
-      o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.14);
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(f, ctx.currentTime + t);
+      o.frequency.exponentialRampToValueAtTime(f * 0.9, ctx.currentTime + t + 0.18);
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + t);
+      g.gain.linearRampToValueAtTime(0.13, ctx.currentTime + t + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.22);
+      o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.24);
     });
   }
 
@@ -1716,8 +1836,8 @@
       s.className = 'spark';
       const size = 5 + Math.random() * 7;
       s.style.width = s.style.height = size + 'px';
-      const hue = 18 + Math.random() * 38;            /* orange → yellow */
-      s.style.background = `radial-gradient(circle, #fff 0%, hsl(${hue},100%,58%) 70%)`;
+      const hue = 40 + Math.random() * 20;            /* amber → gold (no red) */
+      s.style.background = `radial-gradient(circle, #fff 0%, hsl(${hue},100%,60%) 70%)`;
       el.appendChild(s);
       const angle = Math.random() * Math.PI * 2;
       const dist  = 55 + Math.random() * 95;
@@ -1749,10 +1869,10 @@
     if (!isRowComplete) panel.classList.remove('well-done-active');
     document.getElementById('screen-question').classList.toggle('celebrating', isRowComplete);
 
-    /* Vent bars react to input: red on a wrong answer, green on a correct placement */
-    const ventWrong = phase === 'wrong' || phase === 'wrong-second';
-    panel.classList.toggle('vent-wrong', ventWrong);
-    panel.classList.toggle('vent-correct', !ventWrong && justPlaced);
+    /* Vent bars: green on a correct placement only. A wrong answer is shown on the
+       tapped option in the placeholder — never on the switch row / vent circuit. */
+    panel.classList.remove('vent-wrong');
+    panel.classList.toggle('vent-correct', justPlaced);
     botBar.style.visibility = isRowComplete ? 'hidden' : 'visible';
 
     /* Well done overlay — reveal handled by the timer in handleAnswer */
@@ -1898,6 +2018,7 @@
   function handleStart() {
     /* unlock the Web Audio context on this user gesture so timed SFX can play later */
     try { const c = ac(); if (c.state === 'suspended') c.resume(); } catch (e) {}
+    try { startBgm(); } catch (e) {}   /* background music, on the first user gesture */
     /* blast doors close over the title, then the gameplay entrance begins behind them */
     playTransition(() => { handleLevelStart(); });
   }
@@ -2008,6 +2129,7 @@
        so when the blast doors open the bar already reads "Tap the correct switch." */
     clearVoiceQueue();
     stopConfetti();
+    hideNudge();
     document.getElementById('bot-text').textContent = 'Tap the correct switch.';
 
     /* clear the previous level's completion state — everything else stays put */
@@ -2051,6 +2173,7 @@
   function handleAnswer(val) {
     if (phase !== 'question' && phase !== 'hint') return;
     if (timer) clearTimeout(timer);
+    hideNudge();   /* the hand disappears the moment the player taps */
 
     const cfg     = ROWS_CONFIG[currentRow];
     const correct = getCorrect(cfg, grid[currentRow].length);
@@ -2115,38 +2238,24 @@
         sfxCorrect();
         phase = 'question';
         justPlaced = true; renderQuestion(); justPlaced = false;
-        if (currentRow === 0) queueBotText('Tap the correct switch.');   /* guided prompt for the next tap */
+        /* instruction is spoken only once at the start — just re-point the hand at the next option */
+        if (currentRow === 0) setTimeout(maybeShowNudge, 450);
       }
     } else {
+      /* wrong: gentle SFX + sparks/shake/amber glow on the tapped OPTION only —
+         no spoken instruction, and nothing shown on the switch row / vent circuit */
       sfxWrong();
-      queueBotText('Uh-oh! Try again!', voiceUhOh);
       wrongAnswer = val; streak = 0; wrongCount++;
-      if (wrongCount >= 2) {
-        phase = 'wrong-second';
+      phase = 'wrong-second';
+      renderQuestion();
+      spawnSparks(document.querySelector('#options-area .sw.wrong-option .tile'));
+      const revealHint = wrongCount >= 2;   /* checklist: a hint after two consecutive wrongs (visual glow) */
+      timer = setTimeout(() => {
+        wrongAnswer = null; phase = 'question';
+        if (revealHint) showHint = true;
         renderQuestion();
-        spawnSparks(document.querySelector('#options-area .sw.wrong-option .tile'));
-        timer = setTimeout(() => {
-          phase = 'hint';
-          if (wrongCount === 2) {
-            queueBotText("Check the pattern again.", voiceHint, () => {
-              showHint = true;
-              renderQuestion();
-            });
-          } else {
-            showHint = true;
-            renderQuestion();
-          }
-        }, 800);
-      } else {
-        phase = 'wrong';
-        renderQuestion();
-        spawnSparks(document.querySelector('#switch-row .sw.wrong .tile'));
-        timer = setTimeout(() => {
-          wrongAnswer = null; phase = 'question';
-          renderQuestion();
-          queueBotText('Tap the correct switch.', voiceTapCorrect);
-        }, 1400);
-      }
+        if (currentRow === 0) maybeShowNudge();   /* re-point the tutorial hand */
+      }, 850);
     }
   }
 
@@ -2282,6 +2391,7 @@
     const btn = document.getElementById('end-play-again');
     btn.classList.add('hidden');
     if (!v) return;
+    try { duckBgm(true); } catch (e) {}   /* lower the music so the video's audio leads */
     try { v.currentTime = 0; } catch (e) {}
     v.onended = () => btn.classList.remove('hidden');
     const p = v.play();
@@ -2293,10 +2403,12 @@
     if (levelTimer) clearTimeout(levelTimer);
     clearVoiceQueue();
     stopConfetti();
+    hideNudge();
     document.getElementById('transition').classList.add('hidden');
     document.getElementById('transition').classList.remove('closed');
     const _ev = document.getElementById('end-video');
     if (_ev) { try { _ev.pause(); _ev.currentTime = 0; } catch (e) {} }
+    try { duckBgm(false); } catch (e) {}   /* restore music level for the next playthrough */
     phase = 'intro'; currentRow = 0;
     wrongCount = 0; wrongAnswer = null;
     showHint = false; lvl1Guide = false; score = 0; streak = 0;
@@ -2309,6 +2421,7 @@
   const PRELOAD_ASSETS = [
     'assets/title screen.webp',
     'assets/play button.svg',
+    'assets/nudge.webp',
     'assets/robot dance.gif',
     'assets/Red button.webp',
     'assets/Green button.webp',

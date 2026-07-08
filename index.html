@@ -938,19 +938,6 @@
       width: 96px; height: 130px;
     }
     .end-row .tile-num { font-size: 58px; }
-
-    /* Play Again reuses the themed .btn-start look (see below), re-sized + repositioned */
-    #end-play-again {
-      position: absolute;
-      bottom: 64px; left: 50%;
-      width: 360px; height: 86px;
-      transform: translateX(-50%);
-      animation: fadeIn 0.5s ease both;   /* no float here; the rim keeps its glow pulse */
-    }
-    #end-play-again .lbl { font-size: 30px; letter-spacing: 3px; padding-left: 0; }
-    #end-play-again .lbl::before { content: '\21BB'; font-size: 28px; transform: translateY(0); }
-    #end-play-again:hover { transform: translateX(-50%) scale(1.04); }
-    #end-play-again:active { transform: translateX(-50%) scale(0.97); }
   </style>
 </head>
 <body>
@@ -960,7 +947,7 @@
   <!-- ── INTRO ─────────────────────────────────── -->
   <div id="screen-intro">
     <img id="title-screen-img" src="assets/title screen.webp" alt="Lights Out" />
-    <button class="btn-play" onclick="handleStart()" aria-label="Play">
+    <button class="btn-play" id="btn-play" onclick="handleStart(this)" aria-label="Play">
       <img src="assets/play button.svg" alt="Play" />
     </button>
   </div>
@@ -1051,13 +1038,9 @@
 
   </div>
 
-  <!-- ── COMPLETE ──────────────────────────────── -->
+  <!-- ── COMPLETE (end video; on finish it redirects to the title) ── -->
   <div id="screen-complete" class="hidden">
     <video id="end-video" src="assets/end-video.mp4" playsinline preload="auto"></video>
-    <button id="end-play-again" class="btn-start hidden" onclick="resetGame()" aria-label="Play Again">
-      <span class="shine"></span>
-      <span class="lbl">Play Again</span>
-    </button>
   </div>
 
   <!-- ── Tutorial nudge: a tapping hand that points at where to tap ── -->
@@ -1818,13 +1801,16 @@
   }
 
   /* ── Sparks: fling glowing particles from a wrong switch ── */
-  function spawnSparks(el, count) {
+  function spawnSparks(el, count, opts) {
     if (!el) return;
     count = count || 20;
+    opts = opts || {};
+    const hueBase = opts.hue != null ? opts.hue : 40;   /* default amber; pass ~190 for cyan */
 
     /* central burst flash for impact */
     const burst = document.createElement('div');
     burst.className = 'spark-burst';
+    if (opts.burst) burst.style.background = opts.burst;
     el.appendChild(burst);
     burst.animate([
       { transform: 'translate(-50%,-50%) scale(0.2)', opacity: 0.95 },
@@ -1836,8 +1822,9 @@
       s.className = 'spark';
       const size = 5 + Math.random() * 7;
       s.style.width = s.style.height = size + 'px';
-      const hue = 40 + Math.random() * 20;            /* amber → gold (no red) */
+      const hue = hueBase + Math.random() * 20;
       s.style.background = `radial-gradient(circle, #fff 0%, hsl(${hue},100%,60%) 70%)`;
+      s.style.boxShadow = `0 0 10px 3px hsla(${hue},100%,60%,.95)`;
       el.appendChild(s);
       const angle = Math.random() * Math.PI * 2;
       const dist  = 55 + Math.random() * 95;
@@ -2015,12 +2002,34 @@
     levelTimer = setTimeout(handleLevelStart, 2500);
   }
 
-  function handleStart() {
+  let _starting = false;
+  function handleStart(btnEl) {
+    if (_starting) return;   /* ignore double taps on Play / Play Again */
+    _starting = true;
+
+    /* fresh game state — so the same button works for both Play and Play Again */
+    if (timer) clearTimeout(timer);
+    if (levelTimer) clearTimeout(levelTimer);
+    stopConfetti();
+    currentRow = 0; wrongCount = 0; wrongAnswer = null;
+    showHint = false; lvl1Guide = false; score = 0; streak = 0;
+    initGrid();
+
     /* unlock the Web Audio context on this user gesture so timed SFX can play later */
     try { const c = ac(); if (c.state === 'suspended') c.resume(); } catch (e) {}
-    try { startBgm(); } catch (e) {}   /* background music, on the first user gesture */
-    /* blast doors close over the title, then the gameplay entrance begins behind them */
-    playTransition(() => { handleLevelStart(); });
+    try { startBgm(); } catch (e) {}    /* background music, on the first user gesture */
+    try { duckBgm(false); } catch (e) {} /* restore music if the end video had ducked it */
+
+    /* a little burst of cyan sparks pops off the button before the game starts */
+    const btn = btnEl || document.querySelector('.btn-play');
+    if (btn) {
+      if (window.gsap) gsap.to(btn, { scale: 1.16, duration: 0.13, yoyo: true, repeat: 1, ease: 'power2.out', overwrite: 'auto' });
+      spawnSparks(btn, 22, { hue: 188, burst: 'radial-gradient(circle, rgba(220,250,255,.95) 0%, rgba(60,200,255,.5) 42%, rgba(60,200,255,0) 70%)' });
+    }
+    try { sfxPop(720); } catch (e) {}
+
+    /* let the sparks pop, THEN the blast doors close and the gameplay entrance begins */
+    setTimeout(() => { playTransition(() => { handleLevelStart(); }); }, 380);
   }
 
   function handleLevelStart() {
@@ -2385,42 +2394,39 @@
     if (canvas && canvas.getContext) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
   }
 
-  /* final screen: play the end video, reveal Play Again when it finishes */
+  /* final screen: play the end video, then redirect to the title (with a Play Again button) */
   function playEndVideo() {
     const v = document.getElementById('end-video');
-    const btn = document.getElementById('end-play-again');
-    btn.classList.add('hidden');
-    if (!v) return;
+    if (!v) { finishToTitle(); return; }
     try { duckBgm(true); } catch (e) {}   /* lower the music so the video's audio leads */
     try { v.currentTime = 0; } catch (e) {}
-    v.onended = () => btn.classList.remove('hidden');
+    v.onended = finishToTitle;
     const p = v.play();
-    if (p && p.catch) p.catch(() => btn.classList.remove('hidden'));  /* if autoplay is blocked, still offer replay */
+    if (p && p.catch) p.catch(finishToTitle);   /* if autoplay is blocked, go to the title anyway */
   }
 
-  function resetGame() {
-    if (timer) clearTimeout(timer);
-    if (levelTimer) clearTimeout(levelTimer);
-    clearVoiceQueue();
-    stopConfetti();
-    hideNudge();
-    document.getElementById('transition').classList.add('hidden');
-    document.getElementById('transition').classList.remove('closed');
-    const _ev = document.getElementById('end-video');
-    if (_ev) { try { _ev.pause(); _ev.currentTime = 0; } catch (e) {} }
-    try { duckBgm(false); } catch (e) {}   /* restore music level for the next playthrough */
-    phase = 'intro'; currentRow = 0;
-    wrongCount = 0; wrongAnswer = null;
-    showHint = false; lvl1Guide = false; score = 0; streak = 0;
-    initGrid();
-    showScreen('intro');
+  /* end video finished → blast-door back to the title, now showing the Play Again button */
+  function finishToTitle() {
+    const v = document.getElementById('end-video');
+    if (v) v.onended = null;   /* guard against a double fire */
+    playTransition(() => {
+      if (v) { try { v.pause(); } catch (e) {} }
+      /* swap the same title button into "Play Again" — keeps its pulse / glow / click-sparks */
+      const img = document.querySelector('#btn-play img');
+      if (img) { img.src = 'assets/play again.svg'; img.alt = 'Play Again'; }
+      const btn = document.getElementById('btn-play');
+      if (btn) btn.setAttribute('aria-label', 'Play Again');
+      phase = 'intro';
+      showScreen('intro');
+      _starting = false;   /* allow Play Again to fire */
+    });
   }
-
 
   /* ── Boot: preload every asset behind the loading screen, then start ── */
   const PRELOAD_ASSETS = [
     'assets/title screen.webp',
     'assets/play button.svg',
+    'assets/play again.svg',
     'assets/nudge.webp',
     'assets/robot dance.gif',
     'assets/Red button.webp',
@@ -2456,23 +2462,23 @@
     if (!img) return;
 
     const DEPTH = 'drop-shadow(0 7px 14px rgba(0,16,32,0.55))';
-    const PERIOD = 1.9;   /* breathing + glow share one rhythm so they pulse together */
+    const PERIOD = 1.35;   /* faster shared rhythm → a stronger, livelier pulse */
 
-    /* gentle breathing — soft sine, no jarring pop */
+    /* pronounced breathing pulse */
     gsap.to(img, {
-      scale: 1.045, duration: PERIOD, repeat: -1, yoyo: true,
+      scale: 1.09, duration: PERIOD, repeat: -1, yoyo: true,
       ease: 'sine.inOut', transformOrigin: '50% 50%'
     });
 
     /* shaped neon glow that hugs the octagon (drop-shadow on the SVG), pulsing in sync */
-    const g = { blur: 12, a: 0.4 };
+    const g = { blur: 14, a: 0.5 };
     const paint = () => {
       img.style.filter = 'drop-shadow(0 0 ' + g.blur.toFixed(1) + 'px rgba(12,228,249,' +
                          g.a.toFixed(3) + ')) ' + DEPTH;
     };
     paint();
     gsap.to(g, {
-      blur: 30, a: 0.85, duration: PERIOD, repeat: -1, yoyo: true,
+      blur: 44, a: 0.98, duration: PERIOD, repeat: -1, yoyo: true,
       ease: 'sine.inOut', onUpdate: paint
     });
 

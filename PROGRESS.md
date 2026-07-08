@@ -32,10 +32,9 @@ Open `index.html` in any modern browser. (For audio to start, the player taps
 ## Screens
 | Screen | Purpose |
 |---|---|
-| `#screen-intro` | Title image + Start button |
-| `#screen-level` | Level intro: level name + pattern preview (auto-advances after 2.5s) |
+| `#screen-intro` | Title image + Play button (becomes **Play Again** after a full playthrough) |
 | `#screen-question` | Main gameplay |
-| `#screen-complete` | End screen: all 4 completed patterns + Play Again |
+| `#screen-complete` | End video; when it finishes, redirects back to the title screen |
 | `#transition` | Sci‑fi **blast-door** transition between levels |
 
 ---
@@ -114,9 +113,9 @@ vector frames stay **SVG**. Unused legacy assets have been removed.
   `panel.svg`, `panel-green.svg` (success), `options-box.svg`, `options-line.svg`,
   `textbox.svg`.
 - `assets/` — `Red button.webp`, `Green button.webp`, `robot dance.webp`,
-  `title screen.webp` (3D title art), `play button.svg` (title-screen **PLAY**
-  button), `nudge.webp` (tutorial tapping-hand cue). The end-screen **Play Again**
-  button is built in CSS (themed chamfered cyan plate to match).
+  `title screen.webp` (3D title art), `play button.svg` + `play again.svg`
+  (the one title button swaps between them — Play on first load, Play Again after a
+  full playthrough), `nudge.webp` (tutorial tapping-hand cue).
 - `audio/` — number/voice `.ogg` clips are referenced by name but **not currently
   present**; the game runs fine without them (synth SFX cover everything).
 

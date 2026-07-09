@@ -70,7 +70,8 @@ panel → option tiles pop in. Each beat has its own sound.
 
 ### Switches & vent
 - Tiles render as a metal rocker (cropped from `tile.png`) + a **Lilita One** number.
-- Empty slots: cyan neon border; the active "next" slot has a soft cyan glow.
+- Empty slots: cyan neon border (no glow). The **correct option** glows instead, to
+  guide the player.
 - **Vent bars** (top of panel) recolor by state: cyan (idle), green (correct).
   Wrong answers are shown on the tapped option only, not the vent/main panel.
 
@@ -88,16 +89,13 @@ panel → option tiles pop in. Each beat has its own sound.
 - Bot lines **typewriter** out with soft talk blips; options lock while the bot
   "speaks". Instruction is spoken right when the switches finish appearing.
 
-### Tutorial nudge (Level 1 only)
-- A **tapping-hand cue** (`nudge.webp`) points at the correct option whenever it's
-  the player's turn to tap, and bobs like a tap. It hides the instant the player
-  taps (and while the bot is speaking), repositions to each new correct option, and
-  never appears after the tutorial (levels 2+).
+### Tutorial guide (Level 1 only)
+- The **correct option glows** (pulsing cyan outline + halo) to show which switch to
+  tap. The glow follows the correct option across the tutorial's taps. (Levels 2+
+  only glow the correct option as a hint after two consecutive wrong attempts.)
 
 ### Audio (all synthesized via Web Audio API; master gain + compressor)
-- **Background music:** a gentle synthesized sci-fi ambient loop (soft pad chord
-  progression + sparkle arpeggio) on its own low gain, so it never overpowers the
-  SFX. Starts on the first Play tap, ducks under the end video, restores on reset.
+- No background music (SFX only).
 - **SFX:** hover, click, correct, **wrong (gentle "oops", not alarming)**,
   row-complete, entrance pops, panel power-on, options deploy whoosh, power-down/up
   (transition), bot-bar open/close, switch-appear, talk blips, and the
@@ -113,9 +111,9 @@ vector frames stay **SVG**. Unused legacy assets have been removed.
   `panel.svg`, `panel-green.svg` (success), `options-box.svg`, `options-line.svg`,
   `textbox.svg`.
 - `assets/` — `Red button.webp`, `Green button.webp`, `robot dance.webp`,
-  `title screen.webp` (3D title art), `play button.svg` + `play again.svg`
-  (the one title button swaps between them — Play on first load, Play Again after a
-  full playthrough), `nudge.webp` (tutorial tapping-hand cue).
+  `title screen.webp` (3D title art), `play button.svg` (baked **Play** button shown
+  on first load) and `button-plate.svg` (blank octagon used for the **Play Again**
+  state, with an HTML text label over it after a full playthrough).
 - `audio/` — number/voice `.ogg` clips are referenced by name but **not currently
   present**; the game runs fine without them (synth SFX cover everything).
 

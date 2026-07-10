@@ -98,8 +98,9 @@ panel → option tiles pop in. Each beat has its own sound.
 - No background music (SFX only).
 - **SFX:** hover, click, correct, **wrong (gentle "oops", not alarming)**,
   row-complete, entrance pops, panel power-on, options deploy whoosh, power-down/up
-  (transition), bot-bar open/close, switch-appear, talk blips, and the
-  **current-flow surge**. Optional number-voice `.ogg` files degrade gracefully if missing.
+  (transition), bot-bar open/close, switch-appear, talk blips, the
+  **current-flow surge**, and a **happy victory fanfare** on game completion (plays
+  with the confetti). Optional number-voice `.ogg` files degrade gracefully if missing.
 
 ---
 

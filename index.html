@@ -1697,8 +1697,9 @@
     }
     resetIdle();   /* keep watching — nudge again if still idle */
   }
-  /* any real activity resets the idle countdown */
-  ['pointerdown', 'pointermove', 'keydown', 'touchstart'].forEach(ev =>
+  /* a real interaction (tap/click/key) resets the idle countdown —
+     NOT mere mouse movement, or the nudge would never fire on desktop */
+  ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
     window.addEventListener(ev, resetIdle, { passive: true }));
 
   /* ── State ─────────────────────────────────────── */
@@ -2096,8 +2097,8 @@
               queueBotText('These switches are in a pattern.');
               queueBotText('Let us read the pattern together.');
               queueAction(readPatternLvl1);   /* plays 3,5,3,5,3 audio + highlights switches (no text) */
-              queueAction((d) => { lvl1Guide = true; renderQuestion(); d(); });   /* highlight the correct option as the prompt appears */
               queueBotText('Tap the correct switch to continue the pattern.');
+              queueAction((d) => { lvl1Guide = true; renderQuestion(); d(); });   /* highlight only AFTER the instruction finishes */
             } else {
               queueBotText('Tap the correct switch.', voiceTapCorrect);
             }

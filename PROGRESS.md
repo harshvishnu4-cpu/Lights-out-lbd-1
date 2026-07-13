@@ -105,9 +105,10 @@ panel → option tiles pop in. Each beat has its own sound.
 - Optional number-voice `.ogg` files degrade gracefully if missing.
 
 ### Inactivity nudge
-- If the player is idle ~10s during their turn (no tap/move/key), the option tiles
-  do a friendly **bounce wave** + a soft blip to draw them back. Repeats while idle;
-  any activity resets the timer. Only fires when the options are tappable.
+- If the player is idle **~10s** during their turn (no tap/click/key), the option
+  tiles do a friendly **looping bounce wave** for **~5.5s** + a soft blip to draw
+  them back, then rest. Repeats every 10s while idle; any real interaction resets the
+  timer (mouse-move alone does not). Only fires when the options are tappable.
 
 ---
 

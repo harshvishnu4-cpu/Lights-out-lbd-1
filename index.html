@@ -479,15 +479,17 @@
       animation: optTilePop 0.95s cubic-bezier(0.34,1.5,0.5,1) both;
     }
 
-    /* Inactivity nudge — the options bounce (in a wave) to draw an idle player back */
+    /* Inactivity nudge — the options bounce (in a wave), looping, then rest each cycle */
     @keyframes idleBounce {
-      0%, 100% { transform: translateY(0); }
-      35%      { transform: translateY(-18px); }
-      55%      { transform: translateY(0); }
-      72%      { transform: translateY(-8px); }
-      88%      { transform: translateY(0); }
+      0%   { transform: translateY(0); }
+      12%  { transform: translateY(-18px); }
+      26%  { transform: translateY(0); }
+      36%  { transform: translateY(-8px); }
+      46%  { transform: translateY(0); }
+      100% { transform: translateY(0); }   /* rest for the remainder of the cycle */
     }
-    #options-area.idle-nudge .sw { animation: idleBounce 0.9s cubic-bezier(0.3,1,0.5,1); }
+    /* loops (~4 bounces over ~5.5s); the JS removes the class after ~5.5s */
+    #options-area.idle-nudge .sw { animation: idleBounce 1.4s cubic-bezier(0.3,1,0.5,1) infinite; }
     #options-area.idle-nudge .sw:nth-child(1) { animation-delay: 0s; }
     #options-area.idle-nudge .sw:nth-child(2) { animation-delay: 0.07s; }
     #options-area.idle-nudge .sw:nth-child(3) { animation-delay: 0.14s; }
@@ -1087,6 +1089,9 @@
   function playCurrentFlow() {
     try { sfxElectricity.currentTime = 0; sfxElectricity.play().catch(() => {}); } catch (e) {}
     setTimeout(() => { try { sfxEnergy.currentTime = 0; sfxEnergy.play().catch(() => {}); } catch (e) {} }, 170);
+  }
+  function stopCurrentFlow() {   /* cut the long energy clip when we move on (no bleed) */
+    [sfxElectricity, sfxEnergy].forEach(a => { try { a.pause(); a.currentTime = 0; } catch (e) {} });
   }
 
   /* ── Switch appear sounds ────────────────────────── */
@@ -1690,12 +1695,16 @@
       const rowFull = grid[currentRow].length >= (up ? up.length : TOTAL);
       if (!rowFull) {
         optArea.classList.remove('idle-nudge'); void optArea.offsetWidth;
-        optArea.classList.add('idle-nudge');
-        setTimeout(() => optArea.classList.remove('idle-nudge'), 1100);
-        try { sfxHover(); } catch (e) {}   /* soft blip to draw attention */
+        optArea.classList.add('idle-nudge');           /* looping bounce */
+        try { sfxHover(); } catch (e) {}               /* soft blip to draw attention */
+        setTimeout(() => {
+          optArea.classList.remove('idle-nudge');      /* stop after ~5.5s */
+          resetIdle();                                 /* then start the 10s idle countdown again */
+        }, 5500);
+        return;   /* don't restart the countdown until the animation finishes */
       }
     }
-    resetIdle();   /* keep watching — nudge again if still idle */
+    resetIdle();   /* not the player's turn — keep watching */
   }
   /* a real interaction (tap/click/key) resets the idle countdown —
      NOT mere mouse movement, or the nudge would never fire on desktop */
@@ -1743,6 +1752,7 @@
 
   /* Blast-door transition: doors slide shut, swap the screen behind them, slide open */
   function playTransition(swap) {
+    stopCurrentFlow();                               /* stop the energy clip before moving on */
     const t = document.getElementById('transition');
     t.classList.remove('hidden', 'closed');
     void t.offsetWidth;

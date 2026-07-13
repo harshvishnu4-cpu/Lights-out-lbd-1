@@ -479,6 +479,20 @@
       animation: optTilePop 0.95s cubic-bezier(0.34,1.5,0.5,1) both;
     }
 
+    /* Inactivity nudge — the options bounce (in a wave) to draw an idle player back */
+    @keyframes idleBounce {
+      0%, 100% { transform: translateY(0); }
+      35%      { transform: translateY(-18px); }
+      55%      { transform: translateY(0); }
+      72%      { transform: translateY(-8px); }
+      88%      { transform: translateY(0); }
+    }
+    #options-area.idle-nudge .sw { animation: idleBounce 0.9s cubic-bezier(0.3,1,0.5,1); }
+    #options-area.idle-nudge .sw:nth-child(1) { animation-delay: 0s; }
+    #options-area.idle-nudge .sw:nth-child(2) { animation-delay: 0.07s; }
+    #options-area.idle-nudge .sw:nth-child(3) { animation-delay: 0.14s; }
+    #options-area.idle-nudge .sw:nth-child(4) { animation-delay: 0.21s; }
+
     /* ── Deploy: options box emerges from the main panel ── */
     /* 1. the two link pipes shoot down out of the panel bottom */
     .opt-pipe { transform-origin: top center; }
@@ -1065,6 +1079,16 @@
   const voiceUhOh       = new Audio('audio/Uh-oh! Try again!.ogg');
   const voiceHint       = new Audio("audio/Check the pattern again.ogg");
 
+  /* ── Current-flow audio (plays when the energy sweeps the pipes on completion) ── */
+  const sfxElectricity = new Audio('audio/electricity.mp3');   /* short zap as it ignites */
+  const sfxEnergy      = new Audio('audio/energy.mp3');        /* sustained energy flow */
+  sfxElectricity.volume = 0.9;
+  sfxEnergy.volume = 0.75;
+  function playCurrentFlow() {
+    try { sfxElectricity.currentTime = 0; sfxElectricity.play().catch(() => {}); } catch (e) {}
+    setTimeout(() => { try { sfxEnergy.currentTime = 0; sfxEnergy.play().catch(() => {}); } catch (e) {} }, 170);
+  }
+
   /* ── Switch appear sounds ────────────────────────── */
   const sfxSwitch3 = new Audio('audio/3.ogg');
   const sfxSwitch5 = new Audio('audio/5.ogg');
@@ -1645,6 +1669,38 @@
     return pos;
   }
 
+  /* ── Inactivity nudge: if the player is idle ~10s during their turn, bounce the options ── */
+  let _idleTimer = null;
+  const IDLE_MS = 10000;
+  function resetIdle() {
+    if (_idleTimer) clearTimeout(_idleTimer);
+    _idleTimer = setTimeout(idleNudge, IDLE_MS);
+  }
+  function idleNudge() {
+    _idleTimer = null;
+    /* only nudge when it's the player's turn and the options are tappable */
+    const optArea = document.getElementById('options-area');
+    const canTap = optArea && optArea.style.pointerEvents !== 'none' &&
+                   !optArea.classList.contains('hidden-initially') &&
+                   !optArea.classList.contains('invisible') &&
+                   (phase === 'question' || phase === 'hint');
+    if (canTap) {
+      const cfg = ROWS_CONFIG[currentRow];
+      const up  = getUserPositions(cfg);
+      const rowFull = grid[currentRow].length >= (up ? up.length : TOTAL);
+      if (!rowFull) {
+        optArea.classList.remove('idle-nudge'); void optArea.offsetWidth;
+        optArea.classList.add('idle-nudge');
+        setTimeout(() => optArea.classList.remove('idle-nudge'), 1100);
+        try { sfxHover(); } catch (e) {}   /* soft blip to draw attention */
+      }
+    }
+    resetIdle();   /* keep watching — nudge again if still idle */
+  }
+  /* any real activity resets the idle countdown */
+  ['pointerdown', 'pointermove', 'keydown', 'touchstart'].forEach(ev =>
+    window.addEventListener(ev, resetIdle, { passive: true }));
+
   /* ── State ─────────────────────────────────────── */
   let phase       = 'intro';
   let currentRow  = 0;
@@ -2130,7 +2186,7 @@
         phase = 'question';
         justPlaced = true; renderQuestion(); justPlaced = false;
         sfxRowComplete();
-        setTimeout(sfxCurrentFlow, 230);   /* electric surge as the current flows (after the correct chime) */
+        setTimeout(playCurrentFlow, 230);  /* electricity + energy audio as the current sweeps the pipes */
         fireConfetti();                    /* themed energy-burst confetti to celebrate the fixed pattern */
 
         /* the option placeholder retracts back up into the panel */
@@ -2428,6 +2484,7 @@
   }
 
   initGrid();   /* set up game state immediately (cheap) */
+  resetIdle();  /* begin watching for player inactivity */
   const _fill = document.getElementById('loader-fill');
   const _fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
   Promise.race([

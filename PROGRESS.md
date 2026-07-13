@@ -94,13 +94,20 @@ panel → option tiles pop in. Each beat has its own sound.
   tap. The glow follows the correct option across the tutorial's taps. (Levels 2+
   only glow the correct option as a hint after two consecutive wrong attempts.)
 
-### Audio (all synthesized via Web Audio API; master gain + compressor)
+### Audio (SFX synthesized via Web Audio API; master gain + compressor)
 - No background music (SFX only).
 - **SFX:** hover, click, correct, **wrong (gentle "oops", not alarming)**,
   row-complete, entrance pops, panel power-on, options deploy whoosh, power-down/up
-  (transition), bot-bar open/close, switch-appear, talk blips, the
-  **current-flow surge**, and a **happy victory fanfare** on game completion (plays
-  with the confetti). Optional number-voice `.ogg` files degrade gracefully if missing.
+  (transition), bot-bar open/close, switch-appear, talk blips, and a
+  **happy victory fanfare** on game completion (plays with the confetti).
+- **Current-flow audio (files):** on a completed pattern, `audio/electricity.mp3`
+  (zap) then `audio/energy.mp3` (sustained energy) play as the current sweeps the pipes.
+- Optional number-voice `.ogg` files degrade gracefully if missing.
+
+### Inactivity nudge
+- If the player is idle ~10s during their turn (no tap/move/key), the option tiles
+  do a friendly **bounce wave** + a soft blip to draw them back. Repeats while idle;
+  any activity resets the timer. Only fires when the options are tappable.
 
 ---
 

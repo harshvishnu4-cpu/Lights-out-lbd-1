@@ -1,0 +1,8 @@
+# Files excluded from any deployment (dev tooling, design docs, backups).
+# Mirror this list in the host's ignore mechanism (.vercelignore / .netlifyignore / rsync --exclude).
+_dev/
+.vscode/
+.git/
+.gitignore
+.deployignore
+PROGRESS.md

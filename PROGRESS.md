@@ -7,14 +7,19 @@ theme (robot guide, glowing pipes, power button, energy current).
 - **Status:** Playable end-to-end (4 levels → completion screen). Visuals match the
   Figma design (`node 956-7170`) and success screen (`node 975-16315`).
 - **Stack:** Single file — `index.html` (HTML + CSS + vanilla JS). No build step, no
-  dependencies. Fonts (Exo 2, Bebas Neue, Lilita One) load from Google Fonts.
-- **Last updated:** 2026-06-25
+  dependencies. Fonts (Exo 2 400/700/900, Lilita One) load from Google Fonts.
+- **Media formats:** WebM (VP9+Opus) video, Ogg (Opus 64–96k) audio, WebP images
+  (incl. animated) — supported by Chrome, Edge, Firefox and recent Safari.
+- **Last updated:** 2026-07-27
 
 ---
 
 ## How to run
-Open `index.html` in any modern browser. (For audio to start, the player taps
-**Start** — this unlocks the Web Audio context.)
+Serve the folder over HTTP (any static server) **or** open `index.html` directly —
+on `file://` the streaming preloader detects that fetch is blocked and falls back
+to direct asset URLs automatically. A themed loading bar fills where the Play
+button will appear; the button pops in at 100%. (Tapping it also unlocks the Web
+Audio context.)
 
 ---
 
@@ -100,15 +105,26 @@ panel → option tiles pop in. Each beat has its own sound.
   row-complete, entrance pops, panel power-on, options deploy whoosh, power-down/up
   (transition), bot-bar open/close, switch-appear, talk blips, and a
   **happy victory fanfare** on game completion (plays with the confetti).
-- **Current-flow audio (files):** on a completed pattern, `audio/electricity.mp3`
-  (zap) then `audio/energy.mp3` (sustained energy) play as the current sweeps the pipes.
-- Optional number-voice `.ogg` files degrade gracefully if missing.
+- **Pattern-complete audio (files):** on a completed pattern, `audio/electricity.ogg`
+  (zap) then `audio/power_up.ogg` (power-up) play as the current sweeps the pipes;
+  both are cut at the next transition so they don't bleed over.
+- **Voice-over (`.ogg` clips in `audio/`):** every bot line is spoken — tutorial
+  intro ("These switches are in a pattern… Let us read the pattern together"),
+  tutorial instruction, "Tap the correct switch" (also plays as each new level's
+  blast doors open), level-1 win pair ("Well done! The switches are fixed" →
+  "Now, it is your turn to help!"), and the three random win lines for levels 2–4
+  (each picked line plays its matching clip). Number voices (3, 4, 5, 7, 10, 11,
+  13) play as switches cascade in, on correct taps, and during the level-1
+  pattern read-along. The typewriter **talk blips are muted** while a real VO clip
+  speaks; all clips degrade gracefully if missing and are stopped by
+  `clearVoiceQueue()` on transitions.
 
-### Inactivity nudge
+### Inactivity nudge (Levels 2+ only)
 - If the player is idle **~10s** during their turn (no tap/click/key), the option
   tiles do a friendly **looping bounce wave** for **~5.5s** + a soft blip to draw
   them back, then rest. Repeats every 10s while idle; any real interaction resets the
-  timer (mouse-move alone does not). Only fires when the options are tappable.
+  timer (mouse-move alone does not). Only fires when the options are tappable, and
+  **not during the Level 1 tutorial** (the correct-option glow already guides there).
 
 ---
 
@@ -123,13 +139,51 @@ vector frames stay **SVG**. Unused legacy assets have been removed.
   `title screen.webp` (3D title art), `play button.svg` (baked **Play** button shown
   on first load) and `button-plate.svg` (blank octagon used for the **Play Again**
   state, with an HTML text label over it after a full playthrough).
-- `audio/` — number/voice `.ogg` clips are referenced by name but **not currently
-  present**; the game runs fine without them (synth SFX cover everything).
+- `audio/` — number `.ogg` clips (3, 4, 5, 7, 10, 11, 13), bot voice-over `.ogg`
+  lines (tutorial, instructions, win lines), and `electricity.ogg` +
+  `power_up.ogg` for the pattern-complete current sweep. All Ogg **Opus** (64–96k),
+  all present and wired up.
+- `_dev/` — quarantined, **never deployed** (see `.gitignore` / `.deployignore`):
+  dev scratch files and the pre-conversion originals (`end-video.mp4`,
+  `robot dance.gif`, `*.mp3`, Vorbis voice clips).
+
+---
+
+## Performance & delivery (2026-07-27 optimization pass)
+- **Media formats:** `end-video` → WebM (VP9 + Opus, constrained quality: CRF 33 +
+  bitrate cap at 75% of the H.264 source), all audio → Ogg Opus (voice 64k,
+  SFX/music 96k), `robot dance.gif` → animated WebP (q80). Every converted file
+  verified smaller than its source; originals quarantined in `_dev/originals/`.
+- **Boot preloader:** streams all 32 assets via `fetch` + ReadableStream for
+  byte-accurate progress, weighted by a real on-disk size table (regenerate
+  `ASSET_SIZES` in index.html if assets change), refined by Content-Length,
+  smallest-first queue, concurrency 5, 60s per-transfer abort timeout. Fetched
+  files are swapped onto their elements as typed blob: URLs; every element has a
+  one-time `error` fallback back to its original URL. Failures/stalls/file://
+  count as done — loading can never block. The Play button is hidden (and
+  `handleStart` gated) until 100%, then pops in where the loading bar was.
+- **Stuck-proof media gates:** the end video and every spoken line advance via
+  three paths — the media's own `ended` event, an `error` handler, and a
+  duration-based watchdog timer — so no screen can wait forever on media.
+- **GPU compositing:** no 3D transforms/backface anywhere (audited); screens swap
+  via `display:none` so hidden screens hold no layers; celebration-occluded chrome
+  now gets delayed `visibility:hidden` after its fade; the full-screen confetti
+  canvas is `visibility:hidden` while idle.
+- **Removed dead weight:** unused level-intro screen, `.btn-start` block, end-panel
+  CSS, `#wrong-msg` + unreachable `phase==='wrong'` branches, `sfxBarClose`,
+  `sfxCurrentFlow`, Bebas Neue font + Exo 2 weights 600/800; inline favicon added
+  (no more 404). Dev scratch files (`_a_crop.png`, `_arrow.html`) quarantined.
+- **Payload:** 3.30 MB → 2.15 MB (−35%): video 1.37→0.89 MB, images (incl. the
+  old GIF) 1.12→0.70 MB, audio 0.70→0.46 MB.
+- **Verified with Playwright** (headless Chromium over local HTTP): loading bar
+  monotonic and observable under a throttled network, button gated until 100%,
+  full 4-level playthrough, end video plays, every `<img>` healthy, zero JS
+  errors, zero 4xx/5xx, and blocked-asset failure modes still boot and play.
 
 ---
 
 ## Pending / ideas
-- [ ] Add the number-voice `.ogg` files (or remove the references) for spoken numbers.
+- [x] Add the number-voice `.ogg` files for spoken numbers. *(done — plus full bot VO)*
 - [ ] On-screen score/streak display (score is tracked but not shown).
 - [ ] Persist player progress / best score (e.g. `localStorage`).
 - [ ] More levels / difficulty curve; optional timer.
@@ -146,3 +200,6 @@ vector frames stay **SVG**. Unused legacy assets have been removed.
 - Success: green panel border, **green** vent flow + pipe current (confined to the
   exact pipe shape), held longer and sped up for visibility.
 - Added the **current-flow electric surge SFX** as an attention grabber.
+- **2026-07-27:** end-to-end optimization pass — WebM/Opus/animated-WebP media,
+  streaming byte-accurate preloader with gated Play button, media watchdogs,
+  GPU layer hygiene, dead code removal, junk quarantine (see section above).

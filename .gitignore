@@ -1,0 +1,5 @@
+# Dev tooling / quarantined files — never deploy or commit
+_dev/
+.DS_Store
+Thumbs.db
+node_modules/

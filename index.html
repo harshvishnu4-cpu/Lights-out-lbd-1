@@ -578,19 +578,6 @@
       /* fallback shaped glow + depth (GSAP animates this when loaded) */
       filter: drop-shadow(0 0 16px rgba(12,228,249,0.5)) drop-shadow(0 7px 14px rgba(0,16,32,0.55));
     }
-    .btn-play .btn-label {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      transform: translateY(-5px);   /* sit on the plate face (above the bottom bevel) */
-      font-family: 'Lilita One', cursive;
-      font-size: 48px; line-height: 1; letter-spacing: 1px;
-      color: #ffffff; white-space: nowrap; pointer-events: none;
-      text-shadow:
-        -2px -2px 0 #0e63a8, 2px -2px 0 #0e63a8, -2px 2px 0 #0e63a8, 2px 2px 0 #0e63a8,
-        0 5px 0 #0a4c85, 0 7px 9px rgba(0,16,32,0.4);
-    }
-    #btn-play.play-again .btn-label { font-size: 38px; }   /* "Play Again" is longer */
-
     .hidden { display: none !important; }
 
     /* deferred media: no broken-image glyph while the preloader hasn't fed a src yet */
@@ -753,7 +740,6 @@
     <button class="btn-play preloading" id="btn-play" onclick="handleStart(this)" aria-label="Play">
       <span class="btn-inner">
         <img data-src="assets/play button.svg" alt="Play" />
-        <span class="btn-label"></span>   <!-- filled with "Play Again" after a full playthrough -->
       </span>
     </button>
     <!-- themed loading bar shown in the Play button's place until assets hit 100% -->
@@ -889,17 +875,19 @@
   }
 
   /* ── Voice lines (bot VO clips in audio/) ────────── */
+  const voiceTitle         = mkAudio('audio/title.ogg');   /* title-screen VO ("Lights Out!") */
   const voiceTapCorrect    = mkAudio('audio/Tap the correct switch.ogg');
-  const voicePatternIntro  = mkAudio('audio/These switches are in a pattern Let us read the pattern together.ogg');
+  const voicePatternA      = mkAudio('audio/These switches are in a pattern.ogg');
+  const voicePatternB      = mkAudio('audio/Let us read the pattern together.ogg');
   const voiceTapContinue   = mkAudio('audio/Tap the correct switch to continue the pattern.ogg');
   const voiceWellDoneFixed = mkAudio('audio/Well done! The switches are fixed.ogg');
   const voiceYourTurn      = mkAudio('audio/Now, it is your turn to help!.ogg');
   const voiceWinGoodJob    = mkAudio('audio/Good job You fixed these switches.ogg');
   const voiceWinWuhoo      = mkAudio('audio/Wuhoo! The switches are fixed.ogg');
   const voiceWinAll        = mkAudio('audio/Well done! All the switches are fixed.ogg');
-  const ALL_VOICES = [voiceTapCorrect, voicePatternIntro, voiceTapContinue,
-                      voiceWellDoneFixed, voiceYourTurn, voiceWinGoodJob,
-                      voiceWinWuhoo, voiceWinAll];
+  const ALL_VOICES = [voiceTitle, voiceTapCorrect, voicePatternA, voicePatternB,
+                      voiceTapContinue, voiceWellDoneFixed, voiceYourTurn,
+                      voiceWinGoodJob, voiceWinWuhoo, voiceWinAll];
 
   /* ── Pattern-complete audio (two sounds when a pattern is finished) ── */
   const sfxElectricity  = mkAudio('audio/electricity.ogg');   /* short zap as it ignites */
@@ -947,6 +935,7 @@
   }
 
   /* typewriter the dialogue out, blipping softly as the character "speaks" */
+  const TYPE_MS = 90;   /* ms per character — higher = slower, easier to read along */
   let _typeTimer = null;
   function _typeBotText(text, blip = true) {
     const el = document.getElementById('bot-text');
@@ -961,7 +950,7 @@
       /* skip the talk blips when a real voice clip is speaking the line */
       if (blip && i % 2 === 0 && ch && ch !== ' ') sfxTalk();
       if (i >= text.length) { clearInterval(_typeTimer); _typeTimer = null; }
-    }, 55);
+    }, TYPE_MS);
   }
 
   function _advanceQueue() {
@@ -990,7 +979,7 @@
       return;
     }
     _typeBotText(item.text, !item.audio);
-    const readHold = item.text.length * 55 + 1300;   /* typewriter time + reading hold */
+    const readHold = item.text.length * TYPE_MS + 1300;   /* typewriter time + reading hold */
     if (item.audio) {
       /* three reveal paths — ended event, error event, duration watchdog — so a
          stalled/undecodable clip can never gate the game */
@@ -1744,6 +1733,7 @@
 
     /* unlock the Web Audio context on this user gesture so timed SFX can play later */
     try { const c = ac(); if (c.state === 'suspended') c.resume(); } catch (e) {}
+    try { voiceTitle.pause(); } catch (e) {}   /* cut the title VO as the game starts */
 
     /* a little burst of cyan sparks pops off the button before the game starts */
     const btn = btnEl || document.querySelector('.btn-play');
@@ -1836,8 +1826,9 @@
           sfxBarOpen();
           setTimeout(() => {
             if (currentRow === 0) {
-              /* Level 1 — guided tutorial narration (one VO clip covers both sentences) */
-              queueBotText('These switches are in a pattern. Let us read the pattern together.', voicePatternIntro);
+              /* Level 1 — guided tutorial narration (two separate VO clips) */
+              queueBotText('These switches are in a pattern.', voicePatternA);
+              queueBotText('Let us read the pattern together.', voicePatternB);
               queueAction(readPatternLvl1);   /* plays 3,5,3,5,3 audio + highlights switches (no text) */
               queueBotText('Tap the correct switch to continue the pattern.', voiceTapContinue);
               queueAction((d) => { lvl1Guide = true; renderQuestion(); d(); });   /* highlight only AFTER the instruction finishes */
@@ -2157,16 +2148,11 @@
     if (v) { v.onended = null; v.onerror = null; v.onloadedmetadata = null; }
     playTransition(() => {
       if (v) { try { v.pause(); } catch (e) {} }
-      /* same title button → "Play Again": blank plate + text label (keeps pulse/glow/sparks) */
-      const img = document.querySelector('#btn-play img');
-      if (img) { img.src = assetUrl('assets/button-plate.svg'); }
-      const label = document.querySelector('#btn-play .btn-label');
-      if (label) label.textContent = 'Play Again';
-      const btn = document.getElementById('btn-play');
-      if (btn) { btn.classList.add('play-again'); btn.setAttribute('aria-label', 'Play Again'); }
+      /* back to the title with the SAME normal Play button (no "Play Again" state) */
       phase = 'intro';
       showScreen('intro');
-      _starting = false;   /* allow Play Again to fire */
+      _starting = false;   /* allow the button to fire again */
+      playTitleVO();
     });
   }
 
@@ -2186,7 +2172,6 @@
     'assets/Green button.webp': 5726,
     'assets/Red button.webp': 6820,
     'assets/background.webp': 16230,
-    'assets/button-plate.svg': 1553,
     'assets/end-video.webm': 886969,
     'assets/figma/connector.webp': 14054,
     'assets/figma/options-box.svg': 11520,
@@ -2196,25 +2181,27 @@
     'assets/figma/textbox.svg': 2091,
     'assets/figma/tile.webp': 126848,
     'assets/play button.svg': 9585,
-    'assets/robot dance.webp': 279860,
+    'assets/robot dance.webp': 509562,
     'assets/title screen.webp': 159332,
-    'audio/10.ogg': 6980,
-    'audio/11.ogg': 10149,
-    'audio/13.ogg': 10288,
-    'audio/3.ogg': 9024,
-    'audio/4.ogg': 7938,
-    'audio/5.ogg': 8574,
-    'audio/7.ogg': 8303,
+    'audio/10.ogg': 8137,
+    'audio/11.ogg': 8031,
+    'audio/13.ogg': 8951,
+    'audio/3.ogg': 8581,
+    'audio/4.ogg': 9327,
+    'audio/5.ogg': 8585,
+    'audio/7.ogg': 7844,
     'audio/Good job You fixed these switches.ogg': 29516,
+    'audio/Let us read the pattern together.ogg': 31425,
     'audio/Now, it is your turn to help!.ogg': 30490,
-    'audio/Tap the correct switch to continue the pattern.ogg': 40387,
+    'audio/Tap the correct switch to continue the pattern.ogg': 36790,
     'audio/Tap the correct switch.ogg': 20818,
-    'audio/These switches are in a pattern Let us read the pattern together.ogg': 58107,
+    'audio/These switches are in a pattern.ogg': 29776,
     'audio/Well done! All the switches are fixed.ogg': 35218,
     'audio/Well done! The switches are fixed.ogg': 36522,
     'audio/Wuhoo! The switches are fixed.ogg': 36327,
     'audio/electricity.ogg': 8697,
     'audio/power_up.ogg': 100959,
+    'audio/title.ogg': 8107,
   };
 
   /* CSS url() backgrounds that get re-pointed at the fetched blob */
@@ -2389,6 +2376,26 @@
     btn.addEventListener('touchend',    () => to(1.00, 0.40, 'power2.out'));
   }
 
+  /* ── Title VO ──────────────────────────────────────
+     Spoken when the title screen is ready (and again when the end video returns
+     here). Browsers block audio before the first user gesture — if play() is
+     rejected, retry on the first tap on the title screen that isn't the Play
+     button itself (tapping Play goes straight into the game instead). */
+  function playTitleVO() {
+    if (phase !== 'intro' || _starting) return;
+    try { voiceTitle.currentTime = 0; } catch (e) {}
+    const p = voiceTitle.play();
+    if (p && p.catch) p.catch(() => {
+      window.addEventListener('pointerdown', function retry(ev) {
+        window.removeEventListener('pointerdown', retry);
+        if (phase !== 'intro' || _starting) return;
+        const btn = document.getElementById('btn-play');
+        if (btn && ev.target && btn.contains(ev.target)) return;
+        voiceTitle.play().catch(() => {});
+      });
+    });
+  }
+
   /* 100% reached → finish the bar, swap it for the PLAY button (pop-in), unlock starts */
   function revealPlayButton() {
     if (_booted) return;
@@ -2404,6 +2411,7 @@
       if (bar) bar.classList.add('done');
       if (btn) { btn.classList.remove('preloading'); btn.classList.add('boot-reveal'); }
       animatePlayButton();
+      playTitleVO();
     }, 280);   /* let the player see the bar hit 100% before it swaps */
   }
 

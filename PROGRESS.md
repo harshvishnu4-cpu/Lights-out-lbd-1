@@ -37,7 +37,7 @@ Audio context.)
 ## Screens
 | Screen | Purpose |
 |---|---|
-| `#screen-intro` | Title image + Play button (becomes **Play Again** after a full playthrough) |
+| `#screen-intro` | Title image + Play button (same plain **Play** button after a full playthrough; title VO plays on reveal/return) |
 | `#screen-question` | Main gameplay |
 | `#screen-complete` | End video; when it finishes, redirects back to the title screen |
 | `#transition` | Sci‑fi **blast-door** transition between levels |
@@ -108,16 +108,18 @@ panel → option tiles pop in. Each beat has its own sound.
 - **Pattern-complete audio (files):** on a completed pattern, `audio/electricity.ogg`
   (zap) then `audio/power_up.ogg` (power-up) play as the current sweeps the pipes;
   both are cut at the next transition so they don't bleed over.
-- **Voice-over (`.ogg` clips in `audio/`):** every bot line is spoken — tutorial
-  intro ("These switches are in a pattern… Let us read the pattern together"),
-  tutorial instruction, "Tap the correct switch" (also plays as each new level's
-  blast doors open), level-1 win pair ("Well done! The switches are fixed" →
-  "Now, it is your turn to help!"), and the three random win lines for levels 2–4
-  (each picked line plays its matching clip). Number voices (3, 4, 5, 7, 10, 11,
-  13) play as switches cascade in, on correct taps, and during the level-1
-  pattern read-along. The typewriter **talk blips are muted** while a real VO clip
-  speaks; all clips degrade gracefully if missing and are stopped by
-  `clearVoiceQueue()` on transitions.
+- **Voice-over (`.ogg` clips in `audio/`):** every bot line is spoken — **title VO**
+  (`title.ogg`, plays when the Play button reveals and on return from the end
+  video; if autoplay is blocked it retries on the first non-Play tap — NOTE:
+  currently a Windows-TTS placeholder saying "Lights Out!", replace the file with
+  the real recording, same name), tutorial intro (two clips: "These switches are
+  in a pattern." → "Let us read the pattern together."), tutorial instruction,
+  "Tap the correct switch" (also plays as each new level's blast doors open),
+  level-1 win pair, and the three random win lines for levels 2–4. Number voices
+  (3, 4, 5, 7, 10, 11, 13) play as switches cascade in, on correct taps, and
+  during the level-1 pattern read-along. The typewriter (**90 ms/char**,
+  `TYPE_MS`) mutes its talk blips while a real VO clip speaks; all clips degrade
+  gracefully if missing and are stopped by `clearVoiceQueue()` on transitions.
 
 ### Inactivity nudge (Levels 2+ only)
 - If the player is idle **~10s** during their turn (no tap/click/key), the option
@@ -135,10 +137,11 @@ vector frames stay **SVG**. Unused legacy assets have been removed.
 - `assets/figma/` — `robot.webp`, `connector.webp` (pipes), `tile.webp`,
   `panel.svg`, `panel-green.svg` (success), `options-box.svg`, `options-line.svg`,
   `textbox.svg`.
-- `assets/` — `Red button.webp`, `Green button.webp`, `robot dance.webp`,
-  `title screen.webp` (3D title art), `play button.svg` (baked **Play** button shown
-  on first load) and `button-plate.svg` (blank octagon used for the **Play Again**
-  state, with an HTML text label over it after a full playthrough).
+- `assets/` — `Red button.webp`, `Green button.webp`, `robot dance.webp`
+  (animated WebP, re-encoded with `gif2webp` for correct frame disposal —
+  ffmpeg's converter left ghost frames), `title screen.webp` (3D title art) and
+  `play button.svg` (the **Play** button, used for every playthrough).
+  `loader.gif` is present but **not wired** into the game yet.
 - `audio/` — number `.ogg` clips (3, 4, 5, 7, 10, 11, 13), bot voice-over `.ogg`
   lines (tutorial, instructions, win lines), and `electricity.ogg` +
   `power_up.ogg` for the pattern-complete current sweep. All Ogg **Opus** (64–96k),
@@ -203,3 +206,9 @@ vector frames stay **SVG**. Unused legacy assets have been removed.
 - **2026-07-27:** end-to-end optimization pass — WebM/Opus/animated-WebP media,
   streaming byte-accurate preloader with gated Play button, media watchdogs,
   GPU layer hygiene, dead code removal, junk quarantine (see section above).
+- **2026-07-29:** typewriter slowed to 90 ms/char; title VO wired (placeholder
+  clip — replace `audio/title.ogg` with the real recording); fixed robot-dance
+  ghosting (gif2webp re-encode, 510 KB, still 27% under the source GIF); removed
+  the **Play Again** button state (plain Play button returns after the end
+  video); tutorial intro split into its two new VO clips; new/restored Vorbis
+  clips re-encoded to Opus.

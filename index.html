@@ -824,7 +824,7 @@
 
   </div>
 
-  <!-- ── COMPLETE (end video; on finish it redirects to the title) ──
+  <!-- ── COMPLETE (end video — the game ends here, holding on the last frame) ──
        WebM (VP9 + Opus): supported by Chrome/Edge/Firefox and recent Safari (17.4+ on
        modern hardware). preload="none" — the boot preloader feeds it a blob: URL. -->
   <div id="screen-complete" class="hidden">
@@ -1721,10 +1721,10 @@
   let _starting = false;
   function handleStart(btnEl) {
     if (!_assetsReady) return;   /* gate ALL starts (click/keyboard/programmatic) until 100% preloaded */
-    if (_starting) return;       /* ignore double taps on Play / Play Again */
+    if (_starting) return;       /* ignore double taps on Play */
     _starting = true;
 
-    /* fresh game state — so the same button works for both Play and Play Again */
+    /* fresh game state */
     if (timer) clearTimeout(timer);
     stopConfetti();
     currentRow = 0; wrongCount = 0; wrongAnswer = null;
@@ -2116,44 +2116,16 @@
     }
   }
 
-  /* final screen: play the end video, then redirect to the title.
-     Three reveal paths — the ended event, an error handler, and a duration watchdog
-     (re-armed once real metadata arrives) — so the player can never get stuck here. */
-  let _endWatchdog = null;
-  let _endFinished = false;
-  function _armEndWatchdog(v) {
-    if (_endWatchdog) clearTimeout(_endWatchdog);
-    const dur = (v && isFinite(v.duration) && v.duration > 0) ? v.duration : 30;
-    _endWatchdog = setTimeout(finishToTitle, dur * 1000 + 4000);   /* duration + grace */
-  }
+  /* Final screen: the game ENDS on the end video — no redirect back to the title.
+     The video plays once and holds on its last frame. (v.play() runs right after
+     a user tap, so autoplay policy allows it; a broken blob reverts to the file
+     URL via the element's one-time error fallback.) */
   function playEndVideo() {
     const v = document.getElementById('end-video');
-    _endFinished = false;
-    if (!v) { finishToTitle(); return; }
+    if (!v) return;
     try { v.currentTime = 0; } catch (e) {}
-    v.onended = finishToTitle;
-    v.onerror = finishToTitle;
-    v.onloadedmetadata = () => _armEndWatchdog(v);   /* refine with the real duration */
-    _armEndWatchdog(v);
     const p = v.play();
-    if (p && p.catch) p.catch(finishToTitle);   /* if autoplay is blocked, go to the title anyway */
-  }
-
-  /* end video finished → blast-door back to the title, now showing the Play Again button */
-  function finishToTitle() {
-    if (_endFinished) return;   /* single fire — ended/error/watchdog may race */
-    _endFinished = true;
-    if (_endWatchdog) { clearTimeout(_endWatchdog); _endWatchdog = null; }
-    const v = document.getElementById('end-video');
-    if (v) { v.onended = null; v.onerror = null; v.onloadedmetadata = null; }
-    playTransition(() => {
-      if (v) { try { v.pause(); } catch (e) {} }
-      /* back to the title with the SAME normal Play button (no "Play Again" state) */
-      phase = 'intro';
-      showScreen('intro');
-      _starting = false;   /* allow the button to fire again */
-      playTitleVO();
-    });
+    if (p && p.catch) p.catch(() => {});
   }
 
   /* ══ Boot preloader ══════════════════════════════════════════════════════
@@ -2377,10 +2349,10 @@
   }
 
   /* ── Title VO ──────────────────────────────────────
-     Spoken when the title screen is ready (and again when the end video returns
-     here). Browsers block audio before the first user gesture — if play() is
-     rejected, retry on the first tap on the title screen that isn't the Play
-     button itself (tapping Play goes straight into the game instead). */
+     Spoken when the title screen is ready. Browsers block audio before the first
+     user gesture — if play() is rejected, retry on the first tap on the title
+     screen that isn't the Play button itself (tapping Play goes straight into
+     the game instead). */
   function playTitleVO() {
     if (phase !== 'intro' || _starting) return;
     try { voiceTitle.currentTime = 0; } catch (e) {}

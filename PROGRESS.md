@@ -37,9 +37,9 @@ Audio context.)
 ## Screens
 | Screen | Purpose |
 |---|---|
-| `#screen-intro` | Title image + Play button (same plain **Play** button after a full playthrough; title VO plays on reveal/return) |
+| `#screen-intro` | Title image + Play button (title VO plays when the button reveals) |
 | `#screen-question` | Main gameplay |
-| `#screen-complete` | End video; when it finishes, redirects back to the title screen |
+| `#screen-complete` | End video — **the game ends here**, holding on the last frame (no redirect) |
 | `#transition` | Sci‑fi **blast-door** transition between levels |
 
 ---
@@ -109,8 +109,8 @@ panel → option tiles pop in. Each beat has its own sound.
   (zap) then `audio/power_up.ogg` (power-up) play as the current sweeps the pipes;
   both are cut at the next transition so they don't bleed over.
 - **Voice-over (`.ogg` clips in `audio/`):** every bot line is spoken — **title VO**
-  (`title.ogg`, plays when the Play button reveals and on return from the end
-  video; if autoplay is blocked it retries on the first non-Play tap — NOTE:
+  (`title.ogg`, plays when the Play button reveals;
+  if autoplay is blocked it retries on the first non-Play tap — NOTE:
   currently a Windows-TTS placeholder saying "Lights Out!", replace the file with
   the real recording, same name), tutorial intro (two clips: "These switches are
   in a pattern." → "Let us read the pattern together."), tutorial instruction,

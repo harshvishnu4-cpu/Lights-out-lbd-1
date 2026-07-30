@@ -875,7 +875,6 @@
   }
 
   /* ── Voice lines (bot VO clips in audio/) ────────── */
-  const voiceTitle         = mkAudio('audio/title.ogg');   /* title-screen VO ("Lights Out!") */
   const voiceTapCorrect    = mkAudio('audio/Tap the correct switch.ogg');
   const voicePatternA      = mkAudio('audio/These switches are in a pattern.ogg');
   const voicePatternB      = mkAudio('audio/Let us read the pattern together.ogg');
@@ -885,7 +884,7 @@
   const voiceWinGoodJob    = mkAudio('audio/Good job You fixed these switches.ogg');
   const voiceWinWuhoo      = mkAudio('audio/Wuhoo! The switches are fixed.ogg');
   const voiceWinAll        = mkAudio('audio/Well done! All the switches are fixed.ogg');
-  const ALL_VOICES = [voiceTitle, voiceTapCorrect, voicePatternA, voicePatternB,
+  const ALL_VOICES = [voiceTapCorrect, voicePatternA, voicePatternB,
                       voiceTapContinue, voiceWellDoneFixed, voiceYourTurn,
                       voiceWinGoodJob, voiceWinWuhoo, voiceWinAll];
 
@@ -1733,7 +1732,6 @@
 
     /* unlock the Web Audio context on this user gesture so timed SFX can play later */
     try { const c = ac(); if (c.state === 'suspended') c.resume(); } catch (e) {}
-    try { voiceTitle.pause(); } catch (e) {}   /* cut the title VO as the game starts */
 
     /* a little burst of cyan sparks pops off the button before the game starts */
     const btn = btnEl || document.querySelector('.btn-play');
@@ -2173,7 +2171,6 @@
     'audio/Wuhoo! The switches are fixed.ogg': 36327,
     'audio/electricity.ogg': 8697,
     'audio/power_up.ogg': 100959,
-    'audio/title.ogg': 8107,
   };
 
   /* CSS url() backgrounds that get re-pointed at the fetched blob */
@@ -2348,26 +2345,6 @@
     btn.addEventListener('touchend',    () => to(1.00, 0.40, 'power2.out'));
   }
 
-  /* ── Title VO ──────────────────────────────────────
-     Spoken when the title screen is ready. Browsers block audio before the first
-     user gesture — if play() is rejected, retry on the first tap on the title
-     screen that isn't the Play button itself (tapping Play goes straight into
-     the game instead). */
-  function playTitleVO() {
-    if (phase !== 'intro' || _starting) return;
-    try { voiceTitle.currentTime = 0; } catch (e) {}
-    const p = voiceTitle.play();
-    if (p && p.catch) p.catch(() => {
-      window.addEventListener('pointerdown', function retry(ev) {
-        window.removeEventListener('pointerdown', retry);
-        if (phase !== 'intro' || _starting) return;
-        const btn = document.getElementById('btn-play');
-        if (btn && ev.target && btn.contains(ev.target)) return;
-        voiceTitle.play().catch(() => {});
-      });
-    });
-  }
-
   /* 100% reached → finish the bar, swap it for the PLAY button (pop-in), unlock starts */
   function revealPlayButton() {
     if (_booted) return;
@@ -2383,7 +2360,6 @@
       if (bar) bar.classList.add('done');
       if (btn) { btn.classList.remove('preloading'); btn.classList.add('boot-reveal'); }
       animatePlayButton();
-      playTitleVO();
     }, 280);   /* let the player see the bar hit 100% before it swaps */
   }
 

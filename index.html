@@ -1919,8 +1919,15 @@
         sfxCorrect();
         phase = 'question';
         justPlaced = true; renderQuestion(); justPlaced = false;
-        sfxRowComplete();
-        setTimeout(playCurrentFlow, 230);  /* electricity + energy audio as the current sweeps the pipes */
+
+        /* Let the tapped number's voice finish BEFORE the celebration audio piles
+           on — the row-complete chime, current-flow clips, win fanfare and the
+           spoken win line otherwise all start in the same instant and bury it
+           (e.g. the final "11" on the last pattern was inaudible). Visuals stay
+           immediate; only the competing audio waits. Longest number clip ≈ 0.98s. */
+        const NUM_VO_MS = 1000;
+        setTimeout(sfxRowComplete, NUM_VO_MS);
+        setTimeout(playCurrentFlow, NUM_VO_MS + 230);  /* electricity + energy audio as the current sweeps the pipes */
         fireConfetti();                    /* themed energy-burst confetti to celebrate the fixed pattern */
 
         /* the option placeholder retracts back up into the panel */
@@ -1934,8 +1941,8 @@
 
         const isLast = currentRow + 1 >= ROWS_CONFIG.length;
         if (isLast) {
-          sfxWin();                          /* happy victory fanfare — the whole game is done */
-          setTimeout(fireConfetti, 900);     /* a second confetti wave to celebrate the finale */
+          setTimeout(sfxWin, NUM_VO_MS);                /* happy victory fanfare — the whole game is done */
+          setTimeout(fireConfetti, NUM_VO_MS + 900);    /* a second confetti wave to celebrate the finale */
         }
         const advance = () => {
           timer = setTimeout(() => {
@@ -1948,18 +1955,21 @@
           }, 700);
         };
 
-        if (currentRow === 0) {
-          queueBotText('Well done! The switches are fixed.', voiceWellDoneFixed);
-          queueBotText('Now, it is your turn to help!', voiceYourTurn, advance);
-        } else {
-          const winLines = [
-            { text: 'Good job! You fixed these switches.',    audio: voiceWinGoodJob },
-            { text: 'Wuhoo! The switches are fixed.',         audio: voiceWinWuhoo },
-            { text: 'Well done! All the switches are fixed.', audio: voiceWinAll }
-          ];
-          const pick = winLines[Math.floor(Math.random() * winLines.length)];
-          queueBotText(pick.text, pick.audio, advance);
-        }
+        /* the spoken win line waits for the number VO too (speech over speech) */
+        setTimeout(() => {
+          if (currentRow === 0) {
+            queueBotText('Well done! The switches are fixed.', voiceWellDoneFixed);
+            queueBotText('Now, it is your turn to help!', voiceYourTurn, advance);
+          } else {
+            const winLines = [
+              { text: 'Good job! You fixed these switches.',    audio: voiceWinGoodJob },
+              { text: 'Wuhoo! The switches are fixed.',         audio: voiceWinWuhoo },
+              { text: 'Well done! All the switches are fixed.', audio: voiceWinAll }
+            ];
+            const pick = winLines[Math.floor(Math.random() * winLines.length)];
+            queueBotText(pick.text, pick.audio, advance);
+          }
+        }, NUM_VO_MS);
       } else {
         sfxCorrect();
         phase = 'question';

@@ -209,3 +209,65 @@ vector frames stay **SVG**. Unused legacy assets have been removed.
   the **Play Again** button state (plain Play button returns after the end
   video); tutorial intro split into its two new VO clips; new/restored Vorbis
   clips re-encoded to Opus.
+- **2026-08-03:** fixed overlapping audio on the last switch of a pattern. The
+  celebration now runs as a strict chain (spoken number → chime *or* victory
+  fanfare → current-flow bed → spoken win line) instead of firing everything off
+  fixed timers from the same instant. `power_up.ogg` is 8.1 s long and used to
+  drone under the whole finale — it is now held 1.25 s and faded out. The finale
+  plays `sfxWin` *instead of* `sfxRowComplete` (both are the same ascending
+  C-major run, so together they just smeared), and `sfxCorrect` no longer chirps
+  over the spoken number. A generation counter cancels an in-flight chain if the
+  dialogue is torn down mid-celebration.
+- **2026-08-03:** fixed the confetti frame drop. Every particle was a path fill
+  with `ctx.shadowBlur = 14`; ~280 blurred fills per frame over 1920×1080 pinned
+  the burst at **75 ms/frame (13 fps)**. The glow is now baked once into 18 small
+  offscreen sprites (shape × colour) and each particle is a single `drawImage`,
+  so the burst runs at the measured ceiling with **zero frames over 40 ms**.
+  Also: the canvas backing store is sized to the stage's actual on-screen size
+  (clamped 960–1920) instead of always pushing 2.1 M pixels; particles that fall
+  past the bottom retire immediately; survivors are compacted in place instead of
+  reallocating; and the finale's second burst now joins the live one rather than
+  cancelling it and allocating a fresh particle set. `handleAnswer`'s synchronous
+  cost on a completed row went 78.5 ms → 11.2 ms.
+  *Measured before/after in the real page over CDP (headless Chromium, software
+  raster): frames >40 ms during the celebration 52/120 → 8/120, p90 75.7 → 25.4 ms.
+  The residual slow frames are a headless rAF-throttling artifact — they appear
+  identically on a fully idle page — not game work.*
+- **2026-08-03 — sanity pass** (whole-file audit; verified by driving the real page
+  over CDP with every `<audio>` element instrumented for play/ended, so the audio
+  timeline could be read directly):
+  - **Options were tappable before the instruction was spoken.** On level 1 the
+    tiles went live ~1.2 s before the tutorial narration was even queued, so a
+    quick player could answer over Byte's voice — or finish the whole row before it
+    had explained the pattern. Levels 2-4 had the same gap. `_setOptionsLock(true)`
+    now lands with the option reveal and the voice queue releases it. Level 1 is
+    interactive after the tutorial finishes (~27 s in) rather than mid-sentence.
+  - **"Well done! ALL the switches are fixed" could play on level 2 of 4** — it was
+    in the random mid-level pool. Now reserved for the final level.
+  - **`loadLevelInPlace` spoke over its own SFX**: the 2.2 s instruction started as
+    the blast doors opened, under the 1.3 s deploy whoosh and the option pop. It now
+    speaks after them, matching the tutorial's box → options → voice order.
+  - **Two spoken numbers could stack** when tapping faster than a clip is long
+    (~0.9 s); `playNumberVO` now cuts any number still speaking.
+  - **A torn-down dialogue line could fire a second level transition.** A queued
+    line's watchdog and its autoplay-blocked fallback timer are not cancellable from
+    outside, so after `clearVoiceQueue` they could still run `onDone` → `advance()` →
+    a second `playTransition`. `finish()` now checks a generation counter
+    (`_voiceGen`, formerly `_celebrateSeq`, which already guarded the confetti chain).
+  - **`_armBlobFallback` reverted a swapped image to the wrong file**: `#power-btn`
+    swaps Red↔Green and `#panel-frame` panel↔panel-green at runtime, but the handler
+    captured the path it was armed with — a failed *green* blob would restore *red*.
+    It now resolves the path from the blob actually loaded.
+  - **Dead code deleted:** the entire never-reachable `row-complete` phase (`phase`
+    is never assigned that value) — its `renderQuestion` branches, the `#well-done-msg`
+    overlay (`#robot-dance`, `#well-done-text`), and the CSS behind it
+    (`greenBorderPulse`, `#main-panel.row-complete` ×3, `#screen-question.celebrating`,
+    `.well-done-active`, `wellDonePop`, `robotDance`, `.sw.complete-fill`); the unused
+    `playSwitchAppear` + `LEVEL_SWITCH_SOUNDS`; `#main-panel.vent-wrong` (only ever
+    removed, never added); `#options-area.invisible`; the unstyled `.next-slot` hook;
+    and the dead non-tutorial branch in `handleLevelStart`.
+  - **Audio verified:** all 18 `.ogg` files decode and play from their blob: URLs
+    (durations 0.61 s–8.10 s, zero failures), all 13 Web Audio SFX run without
+    throwing, and a full 4-level playthrough — including a wrong-answer tap — reaches
+    the end video with zero JS errors. The only clips now overlapping are
+    `electricity` + `power_up`, which are one effect in two layers by design.

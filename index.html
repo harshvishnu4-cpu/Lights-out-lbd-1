@@ -212,12 +212,6 @@
       background: #2bff7a;
       box-shadow: 0 0 13px rgba(43,255,122,.95), inset 0 0 4px rgba(255,255,255,.4);
     }
-    #main-panel.vent-wrong .vent-bar {
-      background: #ffb020;
-      box-shadow: 0 0 13px rgba(255,176,32,.95), inset 0 0 4px rgba(255,255,255,.4);
-    }
-    #main-panel.row-complete .vent-bar { display: none; }
-
     /* pattern complete: a bright green pulse flows through the vent bars (left → right, toward the pipe) */
     @keyframes ventFlow {
       from { background-position: -130% 0; }
@@ -328,105 +322,6 @@
       background: radial-gradient(circle, rgba(255,228,150,.95) 0%, rgba(255,184,70,.5) 40%, rgba(255,184,70,0) 70%);
     }
 
-    /* Completed-row switch styling */
-    .sw.complete-fill .tile {
-      outline: 2px solid rgba(120, 235, 255, 0.8);
-      box-shadow: 0 0 12px rgba(0, 220, 255, .45);
-      border-radius: 8px;
-      animation: fadeIn 0.3s ease both;
-    }
-
-    /* Panel green-glow state for row-complete */
-    @keyframes greenBorderPulse {
-      0%,100% { box-shadow: 0 0 0 4px #4afa7c, 0 0 35px rgba(74,250,124,.55), 0 0 80px rgba(74,250,124,.22); }
-      50%     { box-shadow: 0 0 0 4px #4afa7c, 0 0 62px rgba(74,250,124,.88), 0 0 130px rgba(74,250,124,.42); }
-    }
-
-    #main-panel.row-complete {
-      left: 72px; top: 130px;
-      width: 1776px; height: 820px;
-      border-radius: 24px;
-      background: #041840;
-      z-index: 10;
-      animation: greenBorderPulse 1.2s ease-in-out infinite;
-      transition: top 0.35s ease, height 0.35s ease, width 0.35s ease, left 0.35s ease, background 0.3s ease;
-    }
-    #main-panel.row-complete #panel-frame { opacity: 0; }
-    #main-panel.row-complete #switch-row {
-      top: 50%;
-      transform: translateY(-50%);
-      transition: filter 0.3s ease, opacity 0.3s ease;
-    }
-
-    /* Hide surrounding chrome during celebration.
-       visibility:hidden lands AFTER the fade (0s delay trick) so fully-occluded
-       elements release their paint/compositing work instead of sitting at opacity 0;
-       removing the class restores them instantly (base rule has no transition). */
-    #screen-question.celebrating #qrobot,
-    #screen-question.celebrating #power-btn,
-    #screen-question.celebrating #bot-bar,
-    #screen-question.celebrating .connector,
-    #screen-question.celebrating #options-box {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity 0.3s ease, visibility 0s linear 0.3s;
-    }
-
-    /* Hide switches when Well done appears (same delayed-visibility release) */
-    #main-panel.well-done-active #switch-row {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity 0.4s ease, visibility 0s linear 0.4s;
-    }
-
-    /* Well done overlay */
-    @keyframes wellDonePop {
-      from { opacity: 0; transform: translate(-50%, -50%) scale(0.55); }
-      to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    }
-    @keyframes robotDance {
-      0%,100% { transform: translateY(0)    rotate(0deg);   }
-      15%     { transform: translateY(-18px) rotate(-8deg);  }
-      30%     { transform: translateY(0)    rotate(0deg);   }
-      45%     { transform: translateY(-14px) rotate(7deg);   }
-      60%     { transform: translateY(0)    rotate(0deg);   }
-      75%     { transform: translateY(-10px) rotate(-5deg);  }
-      90%     { transform: translateY(0)    rotate(0deg);   }
-    }
-
-    #well-done-msg {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      pointer-events: none;
-      z-index: 20;
-      white-space: nowrap;
-      animation: wellDonePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-    }
-    #well-done-msg.hidden { display: none !important; }
-
-    #robot-dance {
-      width: 180px;
-      height: auto;
-      animation: robotDance 1s ease-in-out infinite;
-      filter: drop-shadow(0 0 18px rgba(0,220,255,.45));
-    }
-
-    #well-done-text {
-      font-family: 'Exo 2', sans-serif;
-      font-size: 110px;
-      font-weight: 900;
-      color: #00e8ff;
-      letter-spacing: 2px;
-      text-shadow: 0 0 40px rgba(0,232,255,.7), 0 0 80px rgba(0,200,255,.35), 0 4px 0 rgba(0,0,0,.45);
-    }
-
     /* Options box (bottom) */
     #options-box {
       position: absolute;
@@ -450,8 +345,6 @@
       gap: 38px;
       z-index: 2;
     }
-    #options-area.invisible { visibility: hidden; pointer-events: none; }
-
     @keyframes optTilePop {
       0%   { opacity: 0; transform: translateY(24px) scale(0.55); }
       60%  { opacity: 1; transform: translateY(-5px) scale(1.12); }
@@ -810,10 +703,6 @@
         <span class="vent-bar" style="left:818.0px;top:24.8px;width:52.3px;height:19.4px;"></span>
       </div>
       <div id="switch-row"></div>
-      <div id="well-done-msg" class="hidden">
-        <img id="robot-dance" data-src="assets/robot dance.webp" alt="robot" />
-        <span id="well-done-text">Well done!</span>
-      </div>
     </div>
 
     <!-- Options box -->
@@ -891,38 +780,95 @@
   /* ── Pattern-complete audio (two sounds when a pattern is finished) ── */
   const sfxElectricity  = mkAudio('audio/electricity.ogg');   /* short zap as it ignites */
   const sfxPowerUpClip  = mkAudio('audio/power_up.ogg');      /* power-up as the current flows */
+  const PU_VOL = 0.85;
   sfxElectricity.volume = 0.9;
-  sfxPowerUpClip.volume = 0.85;
+  sfxPowerUpClip.volume = PU_VOL;
+
+  /* power_up.ogg runs 8.1s — far longer than the current sweeping the pipes — so it
+     is held briefly and faded out. Left to run it droned on underneath the chime,
+     the fanfare and the spoken win line, which is what made the finale sound muddy. */
+  const PU_HOLD_MS = 1250, PU_FADE_MS = 450;
+  const CURRENT_FLOW_MS = 170 + PU_HOLD_MS + PU_FADE_MS;   /* full length of the bed */
+  let _flowTimers = [], _flowFade = null;
+
   function playCurrentFlow() {
+    stopCurrentFlow();
     try { sfxElectricity.currentTime = 0; sfxElectricity.play().catch(() => {}); } catch (e) {}
-    setTimeout(() => { try { sfxPowerUpClip.currentTime = 0; sfxPowerUpClip.play().catch(() => {}); } catch (e) {} }, 170);
-  }
-  function stopCurrentFlow() {   /* cut the clips when we move on (no bleed into the next screen) */
-    [sfxElectricity, sfxPowerUpClip].forEach(a => { try { a.pause(); a.currentTime = 0; } catch (e) {} });
+    _flowTimers.push(setTimeout(() => {
+      try {
+        sfxPowerUpClip.currentTime = 0;
+        sfxPowerUpClip.volume = PU_VOL;
+        sfxPowerUpClip.play().catch(() => {});
+      } catch (e) {}
+      _flowTimers.push(setTimeout(_fadeOutPowerUp, PU_HOLD_MS));
+    }, 170));
   }
 
-  /* ── Switch appear sounds ────────────────────────── */
-  const sfxSwitch3 = mkAudio('audio/3.ogg');
-  const sfxSwitch5 = mkAudio('audio/5.ogg');
+  function _fadeOutPowerUp() {
+    const STEP = 50, dec = PU_VOL / (PU_FADE_MS / STEP);
+    if (_flowFade) clearInterval(_flowFade);
+    _flowFade = setInterval(() => {
+      const v = sfxPowerUpClip.volume - dec;
+      if (v <= 0.02) {
+        clearInterval(_flowFade); _flowFade = null;
+        try { sfxPowerUpClip.pause(); sfxPowerUpClip.currentTime = 0; } catch (e) {}
+        sfxPowerUpClip.volume = PU_VOL;
+      } else {
+        sfxPowerUpClip.volume = v;
+      }
+    }, STEP);
+  }
+
+  function stopCurrentFlow() {   /* cut the clips when we move on (no bleed into the next screen) */
+    _flowTimers.forEach(clearTimeout); _flowTimers = [];
+    if (_flowFade) { clearInterval(_flowFade); _flowFade = null; }
+    [sfxElectricity, sfxPowerUpClip].forEach(a => { try { a.pause(); a.currentTime = 0; } catch (e) {} });
+    sfxPowerUpClip.volume = PU_VOL;
+  }
+
+  /* ── Spoken numbers (one clip per value used by the patterns) ── */
+  const sfxSwitch3  = mkAudio('audio/3.ogg');
   const sfxSwitch4  = mkAudio('audio/4.ogg');
+  const sfxSwitch5  = mkAudio('audio/5.ogg');
   const sfxSwitch7  = mkAudio('audio/7.ogg');
   const sfxSwitch10 = mkAudio('audio/10.ogg');
   const sfxSwitch11 = mkAudio('audio/11.ogg');
   const sfxSwitch13 = mkAudio('audio/13.ogg');
 
-  const LEVEL_SWITCH_SOUNDS = {
-    0: [sfxSwitch3, sfxSwitch5],
-    1: [sfxSwitch4, sfxSwitch7],
-    2: [sfxSwitch7, sfxSwitch10],
-    3: [sfxSwitch11, sfxSwitch13],
-  };
+  /* the number spoken when a switch is tapped — same clip whatever level it is on */
+  const NUMBER_VO = { 3: sfxSwitch3, 4: sfxSwitch4, 5: sfxSwitch5, 7: sfxSwitch7,
+                      10: sfxSwitch10, 11: sfxSwitch11, 13: sfxSwitch13 };
+  function playNumberVO(val) {
+    const snd = NUMBER_VO[val];
+    if (!snd) return null;
+    /* cut any number still speaking — tapping faster than a clip is long (~0.9s)
+       otherwise stacks two numbers on top of each other */
+    for (const k in NUMBER_VO) {
+      const other = NUMBER_VO[k];
+      if (other !== snd && !other.paused) {
+        try { other.pause(); other.currentTime = 0; } catch (e) {}
+      }
+    }
+    try {
+      snd.pause(); snd.currentTime = 0;
+      snd.onended = null; snd.onerror = null;
+      snd.play().catch(() => {});
+    } catch (e) { return null; }
+    return snd;
+  }
 
-  function playSwitchAppear(index) {
-    const sounds = LEVEL_SWITCH_SOUNDS[currentRow];
-    if (!sounds) return;
-    const snd = sounds[index % 2];
-    snd.currentTime = 0;
-    snd.play().catch(() => {});
+  /* run cb once a clip has finished — ended / error / watchdog, whichever fires
+     first, exactly once — so a missing or autoplay-blocked clip never stalls a chain */
+  function whenClipEnds(el, fallbackMs, cb) {
+    let done = false, watch = null;
+    const fire = () => {
+      if (done) return; done = true;
+      if (watch) clearTimeout(watch);
+      if (el) { el.onended = null; el.onerror = null; }
+      cb();
+    };
+    watch = setTimeout(fire, fallbackMs);
+    if (el) { el.onended = fire; el.onerror = fire; }
   }
 
   let _voicePlaying = false;
@@ -959,6 +905,7 @@
       return;
     }
     const item = _voiceQueue.shift();
+    const gen  = _voiceGen;          /* clearVoiceQueue bumps this — see finish() */
     _voicePlaying = true;
     _setOptionsLock(true);
     let advanced = false;
@@ -967,6 +914,11 @@
       if (advanced) return; advanced = true;
       if (watchdog) { clearTimeout(watchdog); watchdog = null; }
       if (item.audio) { item.audio.onended = null; item.audio.onerror = null; }
+      /* If the queue was torn down while this line was in flight, its watchdog (or
+         the autoplay-blocked fallback timer) can still fire later — neither is
+         cancellable from outside. Running onDone here would re-trigger whatever the
+         line completes, e.g. a SECOND level transition from advance(). */
+      if (gen !== _voiceGen) return;
       if (item.onDone) item.onDone();
       _advanceQueue();
     };
@@ -1037,12 +989,21 @@
     playNext();
   }
 
+  /* Bumped whenever the dialogue is torn down. Anything already in flight — a queued
+     line's watchdog, or the celebration chain's timers — compares against it and
+     bails, so a teardown can never drop a stale fanfare, win line or level advance
+     onto the next screen. */
+  let _voiceGen = 0;
+
   function clearVoiceQueue() {
+    _voiceGen++;
     _voiceQueue.length = 0;
     _voicePlaying = false;
     _setOptionsLock(false);
     if (_typeTimer) { clearInterval(_typeTimer); _typeTimer = null; }
     ALL_VOICES.forEach(a => { try { a.pause(); a.currentTime = 0; a.onended = null; } catch (e) {} });
+    Object.values(NUMBER_VO).forEach(a => { try { a.pause(); a.currentTime = 0; a.onended = null; a.onerror = null; } catch (e) {} });
+    stopCurrentFlow();
   }
 
   /* ── SFX (Web Audio API — no external files) ─────── */
@@ -1447,7 +1408,6 @@
     const canTap = currentRow !== 0 &&
                    optArea && optArea.style.pointerEvents !== 'none' &&
                    !optArea.classList.contains('hidden-initially') &&
-                   !optArea.classList.contains('invisible') &&
                    (phase === 'question' || phase === 'hint');
     if (canTap) {
       const cfg = ROWS_CONFIG[currentRow];
@@ -1599,27 +1559,14 @@
     const row     = grid[currentRow];
     const correct = getCorrect(cfg, row.length);
 
-    const isRowComplete = phase === 'row-complete';
-
     /* ── Panel & chrome state ── */
     const panel  = document.getElementById('main-panel');
     const botBar = document.getElementById('bot-bar');
-    if (isRowComplete) { panel.classList.remove('opening'); document.getElementById('screen-question').classList.remove('intro'); }
-    panel.classList.toggle('row-complete', isRowComplete);
-    if (!isRowComplete) panel.classList.remove('well-done-active');
-    document.getElementById('screen-question').classList.toggle('celebrating', isRowComplete);
 
     /* Vent bars: green on a correct placement only. A wrong answer is shown on the
        tapped option in the placeholder — never on the switch row / vent circuit. */
-    panel.classList.remove('vent-wrong');
     panel.classList.toggle('vent-correct', justPlaced);
-    botBar.style.visibility = isRowComplete ? 'hidden' : 'visible';
-
-    /* Well done overlay — reveal handled by the timer in handleAnswer */
-    const wellDoneEl = document.getElementById('well-done-msg');
-    if (!isRowComplete) {
-      wellDoneEl.classList.add('hidden');
-    }
+    botBar.style.visibility = 'visible';
 
     /* ── Switch row container ── */
     const swRow = document.getElementById('switch-row');
@@ -1634,10 +1581,9 @@
     powerEl.alt = rowFull ? 'ON' : 'OFF';
     powerEl.classList.toggle('pulsing', rowFull);   /* powers ON (green) when the row is full */
     /* current flows through the pipes the moment the pattern is completed */
-    const patternDone = rowFull && !isRowComplete;
-    document.getElementById('screen-question').classList.toggle('current-on', patternDone);
+    document.getElementById('screen-question').classList.toggle('current-on', rowFull);
     /* main panel border turns green on a correct, completed pattern (Figma success screen) */
-    document.getElementById('panel-frame').src = assetUrl(patternDone ? 'assets/figma/panel-green.svg' : 'assets/figma/panel.svg');
+    document.getElementById('panel-frame').src = assetUrl(rowFull ? 'assets/figma/panel-green.svg' : 'assets/figma/panel.svg');
 
     /* ── 8 switch slots ── */
     const stepMs   = SWITCH_STEP_MS;
@@ -1646,11 +1592,6 @@
     for (let i = 0; i < TOTAL; i++) {
       const delayMs = offsetMs + i * stepMs;
       const delay   = firstRender ? `${delayMs / 1000}s` : '0s';
-
-      if (isRowComplete) {
-        swRow.appendChild(makeSw(cfg.pattern[i % cfg.pattern.length], 'complete-fill'));
-        continue;
-      }
 
       /* ── Scaffold layout (level 4) ── */
       if (cfg.scaffold) {
@@ -1665,7 +1606,6 @@
           /* user-fill position */
           const userIdx   = userPositions.indexOf(i);
           const answered  = userIdx < row.length;
-          const isCurrent = userIdx === row.length;
           if (answered) {
             const isNew = justPlaced && userIdx === row.length - 1;
             const el = makeSw(row[userIdx], isNew ? 'new' : 'filled');
@@ -1673,7 +1613,7 @@
             swRow.appendChild(el);
           } else {
             const div = document.createElement('div');
-            div.className = 'sw empty' + (isCurrent ? ' next-slot' : '');
+            div.className = 'sw empty';
             if (firstRender) { div.style.animation = 'switchDrop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both'; div.style.animationDelay = delay; }
             swRow.appendChild(div);
           }
@@ -1694,7 +1634,7 @@
         if (firstRender) setTimeout(() => sfxSwitchAppear(i), delayMs);   /* old switch-appear clack (no number audio) */
       } else {
         const div = document.createElement('div');
-        div.className = 'sw empty' + (i === row.length ? ' next-slot' : '');
+        div.className = 'sw empty';
         if (firstRender) { div.style.animation = 'switchDrop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both'; div.style.animationDelay = delay; }
         swRow.appendChild(div);
       }
@@ -1703,8 +1643,7 @@
     /* ── Options ── */
     const optArea = document.getElementById('options-area');
     optArea.innerHTML = '';
-    if (isRowComplete) { optArea.classList.add('invisible'); return; }
-    optArea.classList.remove('invisible', 'reveal', 'hidden-initially');
+    optArea.classList.remove('reveal', 'hidden-initially');
     cfg.options.forEach(opt => {
       const isCorrect      = opt === correct;
       const isWrongOption  = phase === 'wrong-second' && opt === wrongAnswer;
@@ -1815,6 +1754,11 @@
         optArea.classList.add('reveal');
         sfxPop(700);   /* single pop — all four options appear together */
         setTimeout(() => optArea.classList.remove('reveal'), 1400);
+        /* Lock straight away: the tiles are visible ~1.2s before the narration is even
+           queued, and without this a quick player could answer over Byte's voice — or
+           finish the whole tutorial row before it had explained the pattern. The voice
+           queue releases the lock when it drains. */
+        _setOptionsLock(true);
 
         /* 4 — finally the text box slides in, THEN the bot speaks */
         setTimeout(() => {
@@ -1830,9 +1774,8 @@
               queueAction(readPatternLvl1);   /* plays 3,5,3,5,3 audio + highlights switches (no text) */
               queueBotText('Tap the correct switch to continue the pattern.', voiceTapContinue);
               queueAction((d) => { lvl1Guide = true; renderQuestion(); d(); });   /* highlight only AFTER the instruction finishes */
-            } else {
-              queueBotText('Tap the correct switch.', voiceTapCorrect);
             }
+            /* levels 2-4 never come through here — loadLevelInPlace speaks for them */
           }, 450);
         }, 750);
       }, 560 + 1400);   /* after the box-deploy animation (1.4s) finishes */
@@ -1854,11 +1797,9 @@
 
     /* clear the previous level's completion state — everything else stays put */
     const sq = document.getElementById('screen-question');
-    sq.classList.remove('current-on', 'celebrating', 'intro');
-    const panel = document.getElementById('main-panel');
-    panel.classList.remove('row-complete', 'well-done-active', 'opening');
+    sq.classList.remove('current-on', 'intro');
+    document.getElementById('main-panel').classList.remove('opening');
     document.getElementById('panel-frame').src = assetUrl('assets/figma/panel.svg');
-    document.getElementById('well-done-msg').classList.add('hidden');
     document.getElementById('byte-dance').classList.remove('show');
     document.getElementById('qrobot').style.opacity = '';
     const botBar = document.getElementById('bot-bar');
@@ -1877,8 +1818,6 @@
     pipes.forEach(p => { p.classList.remove('extend', 'retract'); p.classList.add('hidden-initially'); });
 
     setTimeout(() => {
-      /* speak the instruction as the doors open on the fresh level */
-      try { voiceTapCorrect.currentTime = 0; voiceTapCorrect.play().catch(() => {}); } catch (e) {}
       pipes.forEach(p => { p.classList.remove('hidden-initially'); void p.offsetWidth; p.classList.add('extend'); });
       setTimeout(() => {
         sfxDeploy();
@@ -1888,6 +1827,14 @@
         optArea.classList.remove('hidden-initially'); void optArea.offsetWidth; optArea.classList.add('reveal');
         sfxPop(700);
         setTimeout(() => optArea.classList.remove('reveal'), 1400);
+        /* Locked until the instruction has been spoken — otherwise the tiles are live
+           before the line starts and a quick tap talks over it (the voice queue
+           releases the lock when it drains). */
+        _setOptionsLock(true);
+        /* The instruction used to start as the doors opened, which put a 2.2s spoken
+           line underneath the 1.3s deploy whoosh and the option pop. It now speaks
+           once those are done, matching the tutorial's order (box → options → voice). */
+        setTimeout(() => queueBotText('Tap the correct switch.', voiceTapCorrect), 500);
       }, 560 + 1400);
     }, 1150);   /* wait for the blast doors to open before deploying the options */
   }
@@ -1900,14 +1847,10 @@
     const correct = getCorrect(cfg, grid[currentRow].length);
 
     if (val === correct) {
-      if (currentRow === 0 && val === 5) { sfxSwitch5.currentTime = 0; sfxSwitch5.play().catch(() => {}); }
-      if (currentRow === 0 && val === 3) { sfxSwitch3.currentTime = 0; sfxSwitch3.play().catch(() => {}); }
-      if (currentRow === 1 && val === 4) { sfxSwitch4.currentTime = 0; sfxSwitch4.play().catch(() => {}); }
-      if (currentRow === 1 && val === 7) { sfxSwitch7.currentTime = 0; sfxSwitch7.play().catch(() => {}); }
-      if (currentRow === 2 && val === 7)  { sfxSwitch7.currentTime = 0;  sfxSwitch7.play().catch(() => {}); }
-      if (currentRow === 2 && val === 10) { sfxSwitch10.currentTime = 0; sfxSwitch10.play().catch(() => {}); }
-      if (currentRow === 3 && val === 11) { sfxSwitch11.currentTime = 0; sfxSwitch11.play().catch(() => {}); }
-      if (currentRow === 3 && val === 13) { sfxSwitch13.currentTime = 0; sfxSwitch13.play().catch(() => {}); }
+      /* the tapped number speaks itself — that IS the correct-answer feedback, so the
+         sfxCorrect chirp only fills in when there is no clip for this number */
+      const numVO = playNumberVO(val);
+      if (!numVO) sfxCorrect();
       const pts   = showHint ? 5 : wrongCount === 0 ? 15 : 10;
       wrongCount  = 0; wrongAnswer = null; showHint = false;
       streak++; score += pts;
@@ -1916,18 +1859,8 @@
       const _userPos = getUserPositions(cfg);
       if (grid[currentRow].length >= (_userPos ? _userPos.length : TOTAL)) {
         _setOptionsLock(true);
-        sfxCorrect();
         phase = 'question';
         justPlaced = true; renderQuestion(); justPlaced = false;
-
-        /* Let the tapped number's voice finish BEFORE the celebration audio piles
-           on — the row-complete chime, current-flow clips, win fanfare and the
-           spoken win line otherwise all start in the same instant and bury it
-           (e.g. the final "11" on the last pattern was inaudible). Visuals stay
-           immediate; only the competing audio waits. Longest number clip ≈ 0.98s. */
-        const NUM_VO_MS = 1000;
-        setTimeout(sfxRowComplete, NUM_VO_MS);
-        setTimeout(playCurrentFlow, NUM_VO_MS + 230);  /* electricity + energy audio as the current sweeps the pipes */
         fireConfetti();                    /* themed energy-burst confetti to celebrate the fixed pattern */
 
         /* the option placeholder retracts back up into the panel */
@@ -1940,10 +1873,6 @@
         document.getElementById('byte-dance').classList.add('show');
 
         const isLast = currentRow + 1 >= ROWS_CONFIG.length;
-        if (isLast) {
-          setTimeout(sfxWin, NUM_VO_MS);                /* happy victory fanfare — the whole game is done */
-          setTimeout(fireConfetti, NUM_VO_MS + 900);    /* a second confetti wave to celebrate the finale */
-        }
         const advance = () => {
           timer = setTimeout(() => {
             if (isLast) {
@@ -1955,24 +1884,49 @@
           }, 700);
         };
 
-        /* the spoken win line waits for the number VO too (speech over speech) */
-        setTimeout(() => {
+        const speakWinLine = () => {
           if (currentRow === 0) {
             queueBotText('Well done! The switches are fixed.', voiceWellDoneFixed);
             queueBotText('Now, it is your turn to help!', voiceYourTurn, advance);
+          } else if (isLast) {
+            /* "ALL the switches are fixed" is only true once the last level is done —
+               it used to be in the random pool, so level 2 of 4 could announce the
+               whole game was finished */
+            queueBotText('Well done! All the switches are fixed.', voiceWinAll, advance);
           } else {
             const winLines = [
-              { text: 'Good job! You fixed these switches.',    audio: voiceWinGoodJob },
-              { text: 'Wuhoo! The switches are fixed.',         audio: voiceWinWuhoo },
-              { text: 'Well done! All the switches are fixed.', audio: voiceWinAll }
+              { text: 'Good job! You fixed these switches.', audio: voiceWinGoodJob },
+              { text: 'Wuhoo! The switches are fixed.',      audio: voiceWinWuhoo }
             ];
             const pick = winLines[Math.floor(Math.random() * winLines.length)];
             queueBotText(pick.text, pick.audio, advance);
           }
-        }, NUM_VO_MS);
+        };
+
+        /* ── Celebration audio runs as a strict chain, one sound at a time ──
+           spoken number → chime (or victory fanfare) → current-flow bed → win line.
+           Everything used to fire off fixed timers from the same instant, so the
+           last tapped number, the chime, the fanfare, the 8s power-up clip and the
+           spoken line all piled on top of each other. Visuals stay immediate —
+           only the audio is sequenced. */
+        const seq = _voiceGen;
+        const alive = () => seq === _voiceGen;
+        whenClipEnds(numVO, numVO ? 1400 : 0, () => {
+          if (!alive()) return;
+          setTimeout(() => {
+            if (!alive()) return;
+            /* the finale gets the victory fanfare INSTEAD of the row chime — both are
+               the same ascending C-major run, together they just smear */
+            if (isLast) { sfxWin(); fireConfetti(); } else { sfxRowComplete(); }
+            setTimeout(() => {
+              if (!alive()) return;
+              playCurrentFlow();     /* electricity + energy bed as the current sweeps the pipes */
+              setTimeout(() => { if (alive()) speakWinLine(); }, CURRENT_FLOW_MS + 150);
+            }, isLast ? 1250 : 620);
+          }, 140);   /* a breath after the number */
+        });
       } else {
-        sfxCorrect();
-        phase = 'question';
+        phase = 'question';   /* the spoken number above is the feedback — no chirp over it */
         /* re-render — the glow moves to the next correct option (instruction stays as-is) */
         justPlaced = true; renderQuestion(); justPlaced = false;
       }
@@ -1996,6 +1950,9 @@
   /* ── Confetti: a themed burst of glowing energy shards, sparks & bolts ── */
   let _confettiRAF = null;
   let _confettiLast = 0;
+  let _confettiCtx = null;
+  let _confettiScale = 1;
+  const _confettiParts = [];   /* live particles — a second burst joins this one */
   const CONFETTI_COLORS = ['#0ce4f9', '#7ff6ff', '#c9f9fe', '#5dff9b', '#23e070', '#ffffff'];
 
   function _rrect(ctx, x, y, w, h, r) {
@@ -2018,108 +1975,158 @@
     ctx.fill();
   }
 
+  /* ── Glow sprites ──
+     Every particle used to be a path fill with ctx.shadowBlur = 14. A blurred fill
+     is one of the most expensive things a 2D canvas can do, and ~280 of them per
+     frame over 1920×1080 is what made the celebration stutter. The glow is now
+     baked ONCE into a small offscreen canvas per shape+colour (18 in total) and
+     each particle costs a single drawImage. */
+  const SPRITE_PAD  = 24;
+  const SPRITE_BASE = { shard: [9, 32], bolt: [34, 34], spark: [12, 12] };   /* [w, h] */
+  const _sprites = Object.create(null);
+
+  (function buildSprites() {
+    for (const shape in SPRITE_BASE) {
+      const bw = SPRITE_BASE[shape][0], bh = SPRITE_BASE[shape][1];
+      for (const col of CONFETTI_COLORS) {
+        const c = document.createElement('canvas');
+        c.width  = bw + SPRITE_PAD * 2;
+        c.height = bh + SPRITE_PAD * 2;
+        const g = c.getContext('2d');
+        g.translate(c.width / 2, c.height / 2);
+        g.shadowColor = col; g.shadowBlur = 14; g.fillStyle = col;
+        if (shape === 'shard') {
+          _rrect(g, -bw / 2, -bh / 2, bw, bh, bw / 2); g.fill();
+        } else if (shape === 'spark') {
+          g.beginPath(); g.arc(0, 0, bh / 2, 0, Math.PI * 2); g.fill();
+        } else {
+          _bolt(g, bh);
+        }
+        _sprites[shape + col] = c;
+      }
+    }
+  })();
+
+  /* The canvas lives in 1920×1080 stage space, but the stage is CSS-scaled to fit
+     the viewport — so render at the size it is actually SHOWN at rather than always
+     pushing 2.1 M pixels. Drawing stays in stage coordinates via a base transform. */
+  function sizeConfetti(canvas) {
+    const shown = canvas.getBoundingClientRect().width || 1920;
+    const dpr   = Math.min(window.devicePixelRatio || 1, 2);
+    const px    = Math.max(960, Math.min(1920, Math.round(shown * dpr)));
+    if (canvas.width !== px) {
+      canvas.width  = px;
+      canvas.height = Math.round(px * 1080 / 1920);
+    }
+    _confettiScale = canvas.width / 1920;
+    _confettiCtx   = canvas.getContext('2d');
+  }
+
+  const _rand = (a, b) => a + Math.random() * (b - a);
+  const _pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  function _emit(x, y, n, angle, spread, sMin, sMax) {
+    for (let i = 0; i < n; i++) {
+      const ang   = angle + _rand(-spread / 2, spread / 2);
+      const sp    = _rand(sMin, sMax);
+      const r     = Math.random();
+      const shape = r < 0.18 ? 'bolt' : r < 0.40 ? 'spark' : 'shard';
+      const col   = _pick(CONFETTI_COLORS);
+      const len   = shape === 'shard' ? _rand(16, 32) : shape === 'bolt' ? _rand(20, 34) : _rand(3, 6);
+      const w     = _rand(5, 9);
+      const bw    = SPRITE_BASE[shape][0], bh = SPRITE_BASE[shape][1];
+      _confettiParts.push({
+        x, y,
+        vx: Math.cos(ang) * sp,
+        vy: Math.sin(ang) * sp,
+        g: _rand(0.30, 0.46),
+        drag: _rand(0.984, 0.992),
+        spr: _sprites[shape + col],
+        /* the sprite is drawn at a canonical size and scaled to this particle */
+        sx: shape === 'shard' ? w / bw : shape === 'spark' ? len / (bh / 2) : len / bh,
+        sy: shape === 'shard' ? len / bh : shape === 'spark' ? len / (bh / 2) : len / bh,
+        rot: _rand(0, Math.PI * 2),
+        vr: _rand(-0.34, 0.34),
+        life: 0, max: _rand(95, 150),
+        flutter: _rand(0.03, 0.07),
+        phase: _rand(0, Math.PI * 2),
+      });
+    }
+  }
+
+  function _confettiFrame(now) {
+    const ctx = _confettiCtx;
+    if (!ctx) { _confettiRAF = null; return; }
+    const dt = _confettiLast ? Math.min(2.2, (now - _confettiLast) / 16.67) : 1;
+    _confettiLast = now;
+
+    const K = _confettiScale;
+    ctx.setTransform(K, 0, 0, K, 0, 0);
+    ctx.clearRect(0, 0, 1920, 1080);
+
+    /* update + draw + compact the survivors back into the same array (no garbage) */
+    let n = 0;
+    for (let i = 0; i < _confettiParts.length; i++) {
+      const p = _confettiParts[i];
+      p.life += dt;
+      if (p.life >= p.max) continue;
+      p.vy += p.g * dt;
+      const d = Math.pow(p.drag, dt);
+      p.vx *= d; p.vy *= d;
+      p.x += (p.vx + Math.sin(p.phase + p.life * p.flutter) * 1.3) * dt;
+      p.y += p.vy * dt;
+      p.rot += p.vr * dt;
+      if (p.y > 1180 && p.vy > 0) continue;   /* fallen off the bottom — retire early */
+
+      const t = p.life / p.max;
+      ctx.globalAlpha = t < 0.72 ? 1 : Math.max(0, 1 - (t - 0.72) / 0.28);
+      const cs = Math.cos(p.rot), sn = Math.sin(p.rot), spr = p.spr;
+      ctx.setTransform(cs * p.sx * K, sn * p.sx * K, -sn * p.sy * K, cs * p.sy * K, p.x * K, p.y * K);
+      ctx.drawImage(spr, -spr.width / 2, -spr.height / 2);
+      _confettiParts[n++] = p;
+    }
+    _confettiParts.length = n;
+
+    if (n > 0) {
+      _confettiRAF = requestAnimationFrame(_confettiFrame);
+    } else {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = 1;
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      _confettiRAF = null;
+      ctx.canvas.classList.remove('on');   /* burst finished → release the layer */
+    }
+  }
+
   function fireConfetti() {
     const canvas = document.getElementById('fx-confetti');
     if (!canvas || !canvas.getContext) return;
+    /* a second burst (the finale) joins the live one instead of cancelling it and
+       allocating a whole new particle set */
+    const fresh = !_confettiRAF;
+    if (fresh) { _confettiParts.length = 0; sizeConfetti(canvas); }
     canvas.classList.add('on');   /* canvas is visibility:hidden while idle */
-    const ctx = canvas.getContext('2d');
-    const W = 1920, H = 1080;
-    if (canvas.width !== W) { canvas.width = W; canvas.height = H; }
-    const parts = [];
-    const rand = (a, b) => a + Math.random() * (b - a);
-    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-
-    function emit(x, y, n, angle, spread, sMin, sMax) {
-      for (let i = 0; i < n; i++) {
-        const ang = angle + rand(-spread / 2, spread / 2);
-        const sp = rand(sMin, sMax);
-        const r = Math.random();
-        const shape = r < 0.18 ? 'bolt' : r < 0.40 ? 'spark' : 'shard';
-        parts.push({
-          x, y,
-          vx: Math.cos(ang) * sp,
-          vy: Math.sin(ang) * sp,
-          g: rand(0.30, 0.46),
-          drag: rand(0.984, 0.992),
-          col: pick(CONFETTI_COLORS),
-          shape,
-          len: shape === 'shard' ? rand(16, 32) : shape === 'bolt' ? rand(20, 34) : rand(3, 6),
-          w: rand(5, 9),
-          rot: rand(0, Math.PI * 2),
-          vr: rand(-0.34, 0.34),
-          life: 0, max: rand(95, 150),
-          flutter: rand(0.03, 0.07),
-          phase: rand(0, Math.PI * 2),
-        });
-      }
-    }
 
     /* burst out of the power button (the energy that just switched on) … */
-    emit(1786, 121, 70, Math.PI / 2, Math.PI * 1.7, 9, 22);
+    _emit(1786, 121, 70, Math.PI / 2, Math.PI * 1.7, 9, 22);
     /* … plus two side cannons firing up & inward for a celebratory fill */
-    emit(150, 1080, 80, -Math.PI / 2 + 0.42, 0.7, 27, 41);
-    emit(1770, 1080, 80, -Math.PI / 2 - 0.42, 0.7, 27, 41);
+    _emit(150, 1080, 80, -Math.PI / 2 + 0.42, 0.7, 27, 41);
+    _emit(1770, 1080, 80, -Math.PI / 2 - 0.42, 0.7, 27, 41);
     /* a softer secondary pop from the panel a moment later */
-    setTimeout(() => { if (_confettiRAF) emit(859, 360, 50, -Math.PI / 2, Math.PI * 1.2, 12, 26); }, 260);
+    setTimeout(() => { if (_confettiRAF) _emit(859, 360, 50, -Math.PI / 2, Math.PI * 1.2, 12, 26); }, 260);
 
-    function draw(p, alpha) {
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, alpha);
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot);
-      ctx.shadowColor = p.col;
-      ctx.shadowBlur = 14;
-      ctx.fillStyle = p.col;
-      if (p.shape === 'shard') {
-        _rrect(ctx, -p.w / 2, -p.len / 2, p.w, p.len, p.w / 2);
-        ctx.fill();
-      } else if (p.shape === 'spark') {
-        ctx.beginPath();
-        ctx.arc(0, 0, p.len, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        _bolt(ctx, p.len);
-      }
-      ctx.restore();
-    }
-
-    if (_confettiRAF) cancelAnimationFrame(_confettiRAF);
-    _confettiLast = 0;
-    function frame(now) {
-      const dt = _confettiLast ? Math.min(2.2, (now - _confettiLast) / 16.67) : 1;
-      _confettiLast = now;
-      ctx.clearRect(0, 0, W, H);
-      let alive = 0;
-      for (const p of parts) {
-        if (p.life >= p.max) continue;
-        alive++;
-        p.life += dt;
-        p.vy += p.g * dt;
-        const d = Math.pow(p.drag, dt);
-        p.vx *= d; p.vy *= d;
-        p.x += (p.vx + Math.sin(p.phase + p.life * p.flutter) * 1.3) * dt;
-        p.y += p.vy * dt;
-        p.rot += p.vr * dt;
-        const t = p.life / p.max;
-        const alpha = t < 0.72 ? 1 : 1 - (t - 0.72) / 0.28;
-        draw(p, alpha);
-      }
-      if (alive > 0) {
-        _confettiRAF = requestAnimationFrame(frame);
-      } else {
-        ctx.clearRect(0, 0, W, H);
-        _confettiRAF = null;
-        canvas.classList.remove('on');   /* burst finished → release the layer */
-      }
-    }
-    _confettiRAF = requestAnimationFrame(frame);
+    if (fresh) { _confettiLast = 0; _confettiRAF = requestAnimationFrame(_confettiFrame); }
   }
 
   function stopConfetti() {
     if (_confettiRAF) { cancelAnimationFrame(_confettiRAF); _confettiRAF = null; }
+    _confettiParts.length = 0;
     const canvas = document.getElementById('fx-confetti');
     if (canvas && canvas.getContext) {
-      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = 1;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       canvas.classList.remove('on');
     }
   }
@@ -2195,12 +2202,19 @@
     if (el._blobGuard) return;
     el._blobGuard = true;
     el.addEventListener('error', function onErr() {
+      const cur = String(el.currentSrc || el.src);
+      if (cur.indexOf('blob:') !== 0) return;   /* only handle blob failures */
       el.removeEventListener('error', onErr);
-      if (String(el.currentSrc || el.src).indexOf('blob:') !== 0) return;   /* only handle blob failures */
-      delete ASSET_BLOBS[path];               /* future assetUrl() calls use the file URL */
+      /* Resolve the path from the blob that is ACTUALLY loaded, not the one this
+         element was armed with. #power-btn swaps Red↔Green and #panel-frame swaps
+         panel↔panel-green at runtime, so the armed path is often the wrong file —
+         reverting to it would show red when green failed. */
+      let failed = path;
+      for (const p in ASSET_BLOBS) { if (ASSET_BLOBS[p] === cur) { failed = p; break; } }
+      delete ASSET_BLOBS[failed];             /* future assetUrl() calls use the file URL */
       const isAV = el.tagName === 'VIDEO' || el.tagName === 'AUDIO';
       const wasPlaying = isAV && !el.paused && !el.ended;
-      el.src = path;
+      el.src = failed;
       if (isAV) { try { el.load(); if (wasPlaying) el.play().catch(() => {}); } catch (e) {} }
     });
   }

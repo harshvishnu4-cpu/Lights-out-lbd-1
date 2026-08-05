@@ -423,6 +423,10 @@
     }
     .sw.option:hover { transform: scale(1.08); }
 
+    /* tutorial: the non-answer switches are inert — no pointer, no hover lift, so they
+       don't invite a tap that would do nothing (only the glowing one responds) */
+    .sw.option-inert { cursor: default; }
+
     .sw.hint { cursor: pointer; position: relative; animation: hintGlow 0.9s ease-in-out infinite; z-index: 3; }
     .sw.hint .tile {
       outline: 4px solid #00e5ff;
@@ -898,6 +902,13 @@
     }, TYPE_MS);
   }
 
+  /* show a line in full, no typing — for text the player has already read */
+  function _setBotText(text) {
+    const el = document.getElementById('bot-text');
+    if (_typeTimer) { clearInterval(_typeTimer); _typeTimer = null; }
+    if (el) el.textContent = text;
+  }
+
   function _advanceQueue() {
     if (_voiceQueue.length === 0) {
       _voicePlaying = false;
@@ -929,7 +940,8 @@
       item.action(finish);
       return;
     }
-    _typeBotText(item.text, !item.audio);
+    if (item.instant) _setBotText(item.text);
+    else              _typeBotText(item.text, !item.audio);
     const readHold = item.text.length * TYPE_MS + 1300;   /* typewriter time + reading hold */
     if (item.audio) {
       /* three reveal paths — ended event, error event, duration watchdog — so a
@@ -948,8 +960,11 @@
     }
   }
 
-  function queueBotText(text, audio, onDone) {
-    _voiceQueue.push({ text, audio, onDone });
+  /* `instant` drops the typewriter and shows the line whole — used for the repeated
+     "Tap the correct switch." instruction, which is already on screen and doesn't need
+     to be re-typed every level */
+  function queueBotText(text, audio, onDone, instant) {
+    _voiceQueue.push({ text, audio, onDone, instant });
     if (!_voicePlaying) _advanceQueue();
   }
 
@@ -1141,6 +1156,76 @@
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
       o.start(t); o.stop(t + 0.42);
     });
+  }
+
+  /* ── Confetti burst: a party-popper crack, then a shower of falling shards ──
+     Deliberately split in two. The crack is a 130 ms transient that fires WITH the
+     visual burst so the explosion has a punch. The shower is broadband noise, which
+     is exactly what masks speech, so it waits and joins the row-complete chime once
+     the tapped number has finished speaking. */
+  function sfxConfettiPop() {
+    const ctx = ac(), t0 = ctx.currentTime;
+
+    /* the crack — a body that snaps down in pitch. Levels are set against the other
+       celebration cues (sfxWin ≈ 0.86 peak, sfxDeploy ≈ 0.73); a burst this size has
+       to sit up there, not down at click level. */
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(masterGain());
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(940, t0);
+    o.frequency.exponentialRampToValueAtTime(140, t0 + 0.10);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.95, t0 + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
+    o.start(t0); o.stop(t0 + 0.19);
+
+    /* paper-tearing edge — a tight noise snap, high-passed so it stays clear of the
+       voice's range */
+    const dur = 0.12;
+    const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * dur), ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const src = ctx.createBufferSource(), hp = ctx.createBiquadFilter(), ng = ctx.createGain();
+    src.buffer = buf;
+    hp.type = 'highpass'; hp.frequency.value = 2600;
+    src.connect(hp); hp.connect(ng); ng.connect(masterGain());
+    ng.gain.setValueAtTime(0.75, t0);
+    ng.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.start(t0); src.stop(t0 + dur);
+  }
+
+  function sfxConfettiShower() {
+    const ctx = ac(), t0 = ctx.currentTime;
+
+    /* the shards fluttering down — noise through a bandpass that sweeps downward */
+    const dur = 0.95;
+    const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * dur), ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), g = ctx.createGain();
+    src.buffer = buf;
+    bp.type = 'bandpass'; bp.Q.value = 0.9;
+    bp.frequency.setValueAtTime(7000, t0);
+    bp.frequency.exponentialRampToValueAtTime(1300, t0 + dur);
+    src.connect(bp); bp.connect(g); g.connect(masterGain());
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.21, t0 + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.start(t0); src.stop(t0 + dur);
+
+    /* glints — a scatter of short high blips as shards catch the light */
+    const GLINTS = [1568, 1976, 2349, 2637, 3136];
+    for (let i = 0; i < 7; i++) {
+      const t = t0 + 0.04 + Math.random() * 0.6;
+      const o = ctx.createOscillator(), og = ctx.createGain();
+      o.connect(og); og.connect(masterGain());
+      o.type = 'sine';
+      o.frequency.value = GLINTS[Math.floor(Math.random() * GLINTS.length)];
+      og.gain.setValueAtTime(0.0001, t);
+      og.gain.exponentialRampToValueAtTime(0.10, t + 0.012);
+      og.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+      o.start(t); o.stop(t + 0.17);
+    }
   }
 
   /* switch dropping in — mechanical clack + an ascending electronic blip */
@@ -1648,10 +1733,16 @@
       const isCorrect      = opt === correct;
       const isWrongOption  = phase === 'wrong-second' && opt === wrongAnswer;
       const isLvl1Glow     = currentRow === 0 && lvl1Guide && isCorrect;
+      /* The tutorial is guided — only the glowing correct switch responds, so a
+         first-time player is walked through the pattern instead of being able to get
+         it wrong while it is still being explained. */
+      const tutorialInert  = currentRow === 0 && !isCorrect;
       const cls            = isWrongOption ? 'wrong-option'
                            : (showHint && isCorrect) || isLvl1Glow ? 'hint'
+                           : tutorialInert ? 'option-inert'
                            : 'option';
-      optArea.appendChild(makeSw(opt, cls, isWrongOption ? null : () => handleAnswer(opt)));
+      const inert = isWrongOption || tutorialInert;
+      optArea.appendChild(makeSw(opt, cls, inert ? null : () => handleAnswer(opt)));
     });
   }
 
@@ -1833,8 +1924,10 @@
         _setOptionsLock(true);
         /* The instruction used to start as the doors opened, which put a 2.2s spoken
            line underneath the 1.3s deploy whoosh and the option pop. It now speaks
-           once those are done, matching the tutorial's order (box → options → voice). */
-        setTimeout(() => queueBotText('Tap the correct switch.', voiceTapCorrect), 500);
+           once those are done, matching the tutorial's order (box → options → voice).
+           No typewriter: the bar already reads this (set above), so it just stays put
+           while the line is spoken. */
+        setTimeout(() => queueBotText('Tap the correct switch.', voiceTapCorrect, null, true), 500);
       }, 560 + 1400);
     }, 1150);   /* wait for the blast doors to open before deploying the options */
   }
@@ -1862,6 +1955,7 @@
         phase = 'question';
         justPlaced = true; renderQuestion(); justPlaced = false;
         fireConfetti();                    /* themed energy-burst confetti to celebrate the fixed pattern */
+        sfxConfettiPop();                  /* the crack lands with the burst — its shower follows the number */
 
         /* the option placeholder retracts back up into the panel */
         const _ob = document.getElementById('options-box');
@@ -1917,7 +2011,8 @@
             if (!alive()) return;
             /* the finale gets the victory fanfare INSTEAD of the row chime — both are
                the same ascending C-major run, together they just smear */
-            if (isLast) { sfxWin(); fireConfetti(); } else { sfxRowComplete(); }
+            if (isLast) { sfxWin(); fireConfetti(); sfxConfettiPop(); } else { sfxRowComplete(); }
+            sfxConfettiShower();   /* the shards flutter down — noise is safe here, the number is done */
             setTimeout(() => {
               if (!alive()) return;
               playCurrentFlow();     /* electricity + energy bed as the current sweeps the pipes */

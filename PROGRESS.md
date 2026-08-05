@@ -271,3 +271,29 @@ vector frames stay **SVG**. Unused legacy assets have been removed.
     throwing, and a full 4-level playthrough — including a wrong-answer tap — reaches
     the end video with zero JS errors. The only clips now overlapping are
     `electricity` + `power_up`, which are one effect in two layers by design.
+- **2026-08-05:** the confetti burst got a sound — `sfxConfettiPop` (a party-popper
+  crack: triangle body snapping 940→140 Hz + a high-passed noise snap) and
+  `sfxConfettiShower` (noise through a bandpass sweeping 7 kHz→1.3 kHz, plus 7
+  scattered glints). Web Audio like every other SFX here, so no new asset.
+  **Deliberately split in two:** the crack fires with the visual burst for punch, but
+  the shower is broadband noise — exactly what masks speech — so it waits ~1 s and
+  joins the row-complete chime once the tapped number has finished. Levels were set by
+  re-rendering each SFX through the real master chain in an `OfflineAudioContext`: the
+  first attempt peaked at 0.124, quieter than a UI click. Now pop ≈ 0.509 peak (a
+  transient — between the chime's 0.332 and `sfxWin`'s 0.862) and shower ≈ 0.286,
+  deliberately just under the chime so the melody stays the focus. Zero clipped
+  samples for chime+shower (0.492), the finale's win+pop+shower (0.863), and even a
+  synthetic five-sound stack (0.917).
+- **2026-08-05:** two tutorial-feel fixes.
+  - **The tutorial no longer accepts wrong taps.** On level 1 only the glowing correct
+    switch responds; the other three render as `.sw.option-inert` (no pointer, no hover
+    lift) with no click handler, so a first-time player is walked through the pattern
+    instead of being able to get it wrong while it is still being explained. Verified
+    by real DOM clicks on all three wrong options — `grid` and `phase` both unchanged —
+    and the correct one still works.
+  - **"Tap the correct switch." no longer re-types itself every level.** The bar
+    already shows it (set at the top of `loadLevelInPlace`), so it was being typed out
+    a second time when the line was spoken. `queueBotText` takes an `instant` flag that
+    shows the line whole via `_setBotText`; the tutorial's own lines still type. Proven
+    with an ordered log of every change to `#bot-text`: exactly one change after the
+    tutorial's last line, straight to the full string.
